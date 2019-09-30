@@ -50,7 +50,7 @@ class QLearningTable:
             print(episode)
 
             #self.test2()
-            #if episode == 19999:
+            #if episode == 5:
                 #self.test()
 
     def check_state_exist(self, state):
@@ -65,11 +65,12 @@ class QLearningTable:
             )
 
     def test(self):
-        state = str(np.ones((3,), dtype=int))
-        while state in self.q_table.index:
-            row = self.q_table.loc[state]
-            maxvalue = self.q_table.loc[state, :].max()
-            actions_state = self.q_table.loc[state]
+        #state = str(np.ones((3,), dtype=int))
+        #while state in self.q_table.index:
+            state = self.q_table[0]
+            row = self.q_table.loc[0]
+            maxvalue = self.q_table.loc[0, :].max()
+            actions_state = self.q_table.loc[0]
             res = (actions_state == maxvalue)
             find_action = res.index[res.idxmax()]
             state = state.strip('[]')
@@ -80,8 +81,8 @@ class QLearningTable:
             state_numpy[tbl[find_action][1]] += thr
             self.file.write(state + ' ' + '[' + str(tbl[find_action][0]) + ',' + str(tbl[find_action][1]) + ']' + ' ' +
                             str(thr) + '\n')
-            state = str(state_numpy)
-        self.file.close()
+            #state = str(state_numpy)
+        #self.file.close()
 
     def test2(self):
         file = open("test_4.txt", "w")

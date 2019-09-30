@@ -15,7 +15,7 @@ from MarkovChain import MarkovChain
 
 
 def update():
-    for episode in range(20000):
+    for episode in range(30000):
         timer_tti = 0
         # initial observation
         observation = env.reset(channel_chain.next_state())
@@ -29,7 +29,7 @@ def update():
             action = RL.choose_action(str(observation))
 
             # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain)
+            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain, episode)
 
             # RL learn from this transition
             RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode)
