@@ -46,7 +46,7 @@ class QLearningTable:
         if timer_tti == 100:
             #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
                 #-self.epsilon_decay * episode)
-            print(self.epsilon)
+            #print(self.epsilon)
             print(episode)
 
             #self.test2()

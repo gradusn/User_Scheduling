@@ -26,10 +26,7 @@ from MarkovChain import MarkovChain
 
 from itertools import combinations
 
-if sys.version_info.major == 2:
-    import Tkinter as tk
-else:
-    import tkinter as tk
+
 
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
@@ -43,7 +40,7 @@ algorithm = ['random', 'rl']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain = {'G': [3, 5], 'B': [0.3,0.5]}
+gain = {'G': [3, 5], 'B': [0.3, 0.5]}
 
 channelmatrix = [[]]
 
@@ -179,7 +176,7 @@ class UserScheduling(object):
         self.mapstatetovectors(observation)
         # s = self.canvas.coords(self.rect)
         s_ = copy.deepcopy(observation)
-        print("The observation is: "+str(observation))
+        #print("The observation is: "+str(observation))
         R, action_random = self.get_rates(observation, action)
         #print(s_[0])
         ues_thr_rl = copy.deepcopy(s_[0])
@@ -192,11 +189,19 @@ class UserScheduling(object):
         thr_rl = R[algorithm.index('rl')]
         thr_random = R[algorithm.index('random')]
 
+        #print(ues_thr_rl)
+
         ues_thr_rl[action_to_ues_tbl[action][0]] += thr_rl[0]
         ues_thr_rl[action_to_ues_tbl[action][1]] += thr_rl[1]
 
+        #print(ues_thr_rl)
+
+        #print(ues_thr_random)
+
         ues_thr_random[action_to_ues_tbl[action_random][0]] += thr_random[0]
         ues_thr_random[action_to_ues_tbl[action_random][1]] += thr_random[1]
+
+        #print(ues_thr_random)
 
         s_ = np.array([ues_thr_rl, channel_chain.next_state()], dtype=object)
 
@@ -248,20 +253,20 @@ class UserScheduling(object):
 
             global gain
             self.mapstatetovectors(observation)
-            print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
+           # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
             gain_array = observation[1].split("_")[0]
             gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
-            print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
+            #print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
             channelmatrix_users = copy.deepcopy(channelmatrix)
             channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
-            print("The chosen UEs vectors are: " + str(channelmatrix_users[0, :]) + "," + str(channelmatrix_users[1, :]))
+            #print("The chosen UEs vectors are: " + str(channelmatrix_users[0, :]) + "," + str(channelmatrix_users[1, :]))
             h_inv = np.linalg.pinv(channelmatrix_users)
             h_inv_tra = np.transpose(h_inv)
             #Normalizing the inverse channel matrix
             h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.sum((np.power(h_inv_tra[0], 2))))
             h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.sum((np.power(h_inv_tra[1], 2))))
-            corrlation_number = np.linalg.cond(channelmatrix_users, np.inf)
-            print("The correlation between UEs is: " + str(corrlation_number))
+            #corrlation_number = np.linalg.cond(channelmatrix_users, np.inf)
+            #print("The correlation between UEs is: " + str(corrlation_number))
             S = []
             N = []
             sum = 0
@@ -270,7 +275,7 @@ class UserScheduling(object):
 
             for i in range(0, len(channelmatrix_users)):
                 scalar_gain = np.random.choice(gain[gain_array[i]])
-                print("The chosen scale is: " + str(scalar_gain))
+                #print("The chosen scale is: " + str(scalar_gain))
                 channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain
                 S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
             for i in range(0, len(channelmatrix_users)):
@@ -288,8 +293,8 @@ class UserScheduling(object):
                 SINR.append(S[i] / (1 + N[i]))
                 R.append(math.log((1 + SINR[i]), 2))
             rates.append(R)
-            print("The SINR is: " + str(SINR))
-            print(rates)
+            #print("The SINR is: " + str(SINR))
+            #print(rates)
 
         return rates, action
 

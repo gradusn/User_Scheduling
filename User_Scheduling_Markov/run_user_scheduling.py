@@ -11,6 +11,8 @@ from User_scheduling_env import UserScheduling
 from Brain_user_scheduling import QLearningTable
 from MarkovChain import MarkovChain
 
+import timeit
+
 
 
 
