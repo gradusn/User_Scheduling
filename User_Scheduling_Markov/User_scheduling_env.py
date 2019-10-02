@@ -35,7 +35,7 @@ n_UEs = 3
 comb = combinations(np.arange(n_UEs), 2)
 action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
-algorithm = ['random', 'rl']
+algorithm = ['random', 'rl', 'optimal']
 
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
@@ -177,6 +177,7 @@ class UserScheduling(object):
         # s = self.canvas.coords(self.rect)
         s_ = copy.deepcopy(observation)
         #print("The observation is: "+str(observation))
+        R, action_optimal = self.find_optimal_Action(observation)
         R, action_random = self.get_rates(observation, action)
         #print(s_[0])
         ues_thr_rl = copy.deepcopy(s_[0])
@@ -239,8 +240,85 @@ class UserScheduling(object):
             done = False
         return s_, reward, done
 
+
+    def find_optimal_Action(self, observation):
+
+        max_sum_log = 0
+        rates = []
+        global gain
+        self.mapstatetovectors(observation)
+
+
+        for action in range(0, n_actions):
+            UE_1 = action_to_ues_tbl[action][0]
+            UE_2 = action_to_ues_tbl[action][1]
+
+            # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
+            gain_array = observation[1].split("_")[0]
+            gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
+            # print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
+            channelmatrix_users = copy.deepcopy(channelmatrix)
+            channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
+            # print("The chosen UEs vectors are: " + str(channelmatrix_users[0, :]) + "," + str(channelmatrix_users[1, :]))
+            h_inv = np.linalg.pinv(channelmatrix_users)
+            h_inv_tra = np.transpose(h_inv)
+            # Normalizing the inverse channel matrix
+            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.sum((np.power(h_inv_tra[0], 2))))
+            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.sum((np.power(h_inv_tra[1], 2))))
+            # corrlation_number = np.linalg.cond(channelmatrix_users, np.inf)
+            # print("The correlation between UEs is: " + str(corrlation_number))
+            S = []
+            N = []
+            sum = 0
+            SINR = []
+            R = []
+
+            for i in range(0, len(channelmatrix_users)):
+                scalar_gain = np.random.choice(gain[gain_array[i]])
+                # print("The chosen scale is: " + str(scalar_gain))
+                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain
+                S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
+            for i in range(0, len(channelmatrix_users)):
+                array = list(range(0, len(channelmatrix_users)))
+                array.remove(i)
+                for j in array:
+                    if np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j])) < 10 ** -10:
+                        sum = sum + 0
+                    else:
+                        sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
+                N.append(sum)
+                sum = 0
+
+            for i in range(0, len(channelmatrix_users)):
+                SINR.append(S[i] / (1 + N[i]))
+                R.append(math.log((1 + SINR[i]), 2))
+            rates.append(R)
+            ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
+            ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+
+            sum_log = 0
+            for i in range(0, len(ues_thr)):
+                sum_log = sum_log + float(np.log2(ues_thr[i]))
+
+            if max_sum_log <= sum_log:
+                max_action = action
+                max_sum_log = sum_log
+            ues_thr = copy.deepcopy(observation[0])
+
+
+        return rates, max_action
+
+
+
+
+
+
+
     def get_rates(self, observation, action_rl):
         rates = []
+        global gain
+        self.mapstatetovectors(observation)
+        gain_array = observation[1].split("_")[0]
 
         for choice in algorithm:
             if choice == 'rl':
@@ -251,8 +329,8 @@ class UserScheduling(object):
                 UE_1 = action_to_ues_tbl[action][0]
                 UE_2 = action_to_ues_tbl[action][1]
 
-            global gain
-            self.mapstatetovectors(observation)
+
+
            # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
             gain_array = observation[1].split("_")[0]
             gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
