@@ -48,8 +48,11 @@ n_actions = binomial(n_UEs, 2)
 
 logthr_rl = []
 logthr_random = []
+logthr_optimal = []
+
 
 ues_thr_random_global = []
+ues_thr_optimal_global = []
 
 
 class UserScheduling(object):
@@ -113,9 +116,12 @@ class UserScheduling(object):
 
     def reset(self, channel_state):
         global ues_thr_random_global
+        global ues_thr_optimal_global
         #self.mapstatetovectors(channel_state)
         array = np.ones((n_UEs,), dtype=float)
         ues_thr_random_global = np.ones((n_UEs,), dtype=float)
+        ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
+
         self.observations = np.array([array, channel_state], dtype=object)
         # print(test [1])
         # self.observations = np.ones((n_UEs,), dtype=int)
@@ -177,11 +183,12 @@ class UserScheduling(object):
         # s = self.canvas.coords(self.rect)
         s_ = copy.deepcopy(observation)
         #print("The observation is: "+str(observation))
-        R, action_optimal = self.find_optimal_Action(observation)
-        R, action_random = self.get_rates(observation, action)
+        #R, action_optimal, action_random, action_rl = self.find_optimal_Action(observation, action)
+        R, action_random, sum_log_optimal = self.get_rates(observation, action)
         #print(s_[0])
         ues_thr_rl = copy.deepcopy(s_[0])
         ues_thr_random = ues_thr_random_global
+        #ues_thr_optimal = ues_thr_optimal_global
 
         #print(action_to_ues_tbl[action][0])
         #print(ues_thr[action_to_ues_tbl[action][0]])
@@ -189,11 +196,15 @@ class UserScheduling(object):
         #print("The Rate is: "+str(R))
         thr_rl = R[algorithm.index('rl')]
         thr_random = R[algorithm.index('random')]
+        #thr_optimal = R[action_optimal]
 
         #print(ues_thr_rl)
 
         ues_thr_rl[action_to_ues_tbl[action][0]] += thr_rl[0]
         ues_thr_rl[action_to_ues_tbl[action][1]] += thr_rl[1]
+
+        #ues_thr_optimal[action_to_ues_tbl[action_optimal][0]] += thr_optimal[0]
+        #ues_thr_optimal[action_to_ues_tbl[action_optimal][1]] += thr_optimal[1]
 
         #print(ues_thr_rl)
 
@@ -216,22 +227,23 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-
-
-
-        if timer_tti == 100:
+        if timer_tti == 10:
             done = True
             logthr_rl.append(reward)
             calc_thr_random = 0
             for i in range(0, len(ues_thr_random)):
                 calc_thr_random = calc_thr_random + float(np.log2(ues_thr_random[i]))
             logthr_random.append(calc_thr_random)
+            logthr_optimal.append(sum_log_optimal)
 
             if episode == 29999:
                 a = np.asarray(logthr_rl)
                 np.savetxt("logthr_rl.csv", a, delimiter=",")
                 b = np.asarray(logthr_random)
                 np.savetxt("logthr_random.csv", b, delimiter=",")
+                c = np.asarray(logthr_optimal)
+                np.savetxt("logthr_optimal.csv", c, delimiter=",")
+
 
                 #self.file_rl.write(str(logthr_rl))
                 #self.file_random.write(str(logthr_random))
@@ -241,84 +253,10 @@ class UserScheduling(object):
         return s_, reward, done
 
 
-    def find_optimal_Action(self, observation):
-
-        max_sum_log = 0
-        rates = []
-        global gain
-        self.mapstatetovectors(observation)
-
-
-        for action in range(0, n_actions):
-            UE_1 = action_to_ues_tbl[action][0]
-            UE_2 = action_to_ues_tbl[action][1]
-
-            # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
-            gain_array = observation[1].split("_")[0]
-            gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
-            # print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
-            channelmatrix_users = copy.deepcopy(channelmatrix)
-            channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
-            # print("The chosen UEs vectors are: " + str(channelmatrix_users[0, :]) + "," + str(channelmatrix_users[1, :]))
-            h_inv = np.linalg.pinv(channelmatrix_users)
-            h_inv_tra = np.transpose(h_inv)
-            # Normalizing the inverse channel matrix
-            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.sum((np.power(h_inv_tra[0], 2))))
-            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.sum((np.power(h_inv_tra[1], 2))))
-            # corrlation_number = np.linalg.cond(channelmatrix_users, np.inf)
-            # print("The correlation between UEs is: " + str(corrlation_number))
-            S = []
-            N = []
-            sum = 0
-            SINR = []
-            R = []
-
-            for i in range(0, len(channelmatrix_users)):
-                scalar_gain = np.random.choice(gain[gain_array[i]])
-                # print("The chosen scale is: " + str(scalar_gain))
-                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain
-                S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
-            for i in range(0, len(channelmatrix_users)):
-                array = list(range(0, len(channelmatrix_users)))
-                array.remove(i)
-                for j in array:
-                    if np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j])) < 10 ** -10:
-                        sum = sum + 0
-                    else:
-                        sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
-                N.append(sum)
-                sum = 0
-
-            for i in range(0, len(channelmatrix_users)):
-                SINR.append(S[i] / (1 + N[i]))
-                R.append(math.log((1 + SINR[i]), 2))
-            rates.append(R)
-            ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
-            ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
-
-            sum_log = 0
-            for i in range(0, len(ues_thr)):
-                sum_log = sum_log + float(np.log2(ues_thr[i]))
-
-            if max_sum_log <= sum_log:
-                max_action = action
-                max_sum_log = sum_log
-            ues_thr = copy.deepcopy(observation[0])
-
-
-        return rates, max_action
-
-
-
-
-
-
-
     def get_rates(self, observation, action_rl):
         rates = []
         global gain
-        self.mapstatetovectors(observation)
-        gain_array = observation[1].split("_")[0]
+        #self.mapstatetovectors(observation)
 
         for choice in algorithm:
             if choice == 'rl':
@@ -328,6 +266,10 @@ class UserScheduling(object):
                 action = np.random.choice(range(0, n_actions))
                 UE_1 = action_to_ues_tbl[action][0]
                 UE_2 = action_to_ues_tbl[action][1]
+            elif choice == 'optimal':
+                max_optimal_sum_log = self.find_optimal_Action(observation)
+                continue;
+
 
 
 
@@ -374,10 +316,77 @@ class UserScheduling(object):
             #print("The SINR is: " + str(SINR))
             #print(rates)
 
-        return rates, action
+        return rates, action, max_optimal_sum_log
 
+    def find_optimal_Action(self, observation):
 
+        max_sum_log = 0
+        rates = []
+        global gain
+        global ues_thr_optimal_global
+        # self.mapstatetovectors(observation)
 
+        # action_random = np.random.choice(range(0, n_actions))
+
+        for action in range(0, n_actions):
+            UE_1 = action_to_ues_tbl[action][0]
+            UE_2 = action_to_ues_tbl[action][1]
+
+            # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
+            gain_array = observation[1].split("_")[0]
+            gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
+            # print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
+            channelmatrix_users = copy.deepcopy(channelmatrix)
+            channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
+            # print("The chosen UEs vectors are: " + str(channelmatrix_users[0, :]) + "," + str(channelmatrix_users[1, :]))
+            h_inv = np.linalg.pinv(channelmatrix_users)
+            h_inv_tra = np.transpose(h_inv)
+            # Normalizing the inverse channel matrix
+            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.sum((np.power(h_inv_tra[0], 2))))
+            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.sum((np.power(h_inv_tra[1], 2))))
+            # corrlation_number = np.linalg.cond(channelmatrix_users, np.inf)
+            # print("The correlation between UEs is: " + str(corrlation_number))
+            S = []
+            N = []
+            sum = 0
+            SINR = []
+            R = []
+
+            for i in range(0, len(channelmatrix_users)):
+                scalar_gain = np.random.choice(gain[gain_array[i]])
+                # print("The chosen scale is: " + str(scalar_gain))
+                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain
+                S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
+            for i in range(0, len(channelmatrix_users)):
+                array = list(range(0, len(channelmatrix_users)))
+                array.remove(i)
+                for j in array:
+                    if np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j])) < 10 ** -10:
+                        sum = sum + 0
+                    else:
+                        sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
+                N.append(sum)
+                sum = 0
+
+            for i in range(0, len(channelmatrix_users)):
+                SINR.append(S[i] / (1 + N[i]))
+                R.append(math.log((1 + SINR[i]), 2))
+            rates.append(R)
+            ues_thr = copy.deepcopy(ues_thr_optimal_global)
+            ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
+            ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+
+            sum_log = 0
+            for i in range(0, len(ues_thr)):
+                sum_log = sum_log + float(np.log2(ues_thr[i]))
+
+            if max_sum_log <= sum_log:
+                max_action = action
+                max_sum_log = sum_log
+                tmp_max_ues_thr = copy.deepcopy(ues_thr)
+        ues_thr_optimal_global = tmp_max_ues_thr
+
+        return max_sum_log
 
     def render(self):
         time.sleep(0.1)

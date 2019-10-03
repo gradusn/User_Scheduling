@@ -43,7 +43,7 @@ class QLearningTable:
 
         q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
-        if timer_tti == 100:
+        if timer_tti == 10:
             #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
                 #-self.epsilon_decay * episode)
             #print(self.epsilon)
