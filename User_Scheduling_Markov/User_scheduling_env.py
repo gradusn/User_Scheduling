@@ -40,7 +40,7 @@ algorithm = ['random', 'rl', 'optimal']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain = {'G': [3, 5], 'B': [0.3, 0.5]}
+gain = {'G': [3, 3], 'B': [0.5, 0.5]}
 
 channelmatrix = [[]]
 
@@ -54,7 +54,10 @@ logthr_optimal = []
 ues_thr_random_global = []
 ues_thr_optimal_global = []
 
+scalar_gain_array = []
 
+check_1 = []
+check_2 = []
 class UserScheduling(object):
     def __init__(self):
         super(UserScheduling, self).__init__()
@@ -69,50 +72,7 @@ class UserScheduling(object):
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
 
-    def _build_maze(self):
-        self.canvas = tk.Canvas(self, bg='white',
-                                height=MAZE_H * UNIT,
-                                width=MAZE_W * UNIT)
 
-        # create grids
-        for c in range(0, MAZE_W * UNIT, UNIT):
-            x0, y0, x1, y1 = c, 0, c, MAZE_H * UNIT
-            self.canvas.create_line(x0, y0, x1, y1)
-        for r in range(0, MAZE_H * UNIT, UNIT):
-            x0, y0, x1, y1 = 0, r, MAZE_W * UNIT, r
-            self.canvas.create_line(x0, y0, x1, y1)
-
-        # create origin
-        origin = np.array([20, 20])
-
-        # hell
-        hell1_center = origin + np.array([UNIT * 2, UNIT])
-        self.hell1 = self.canvas.create_rectangle(
-            hell1_center[0] - 15, hell1_center[1] - 15,
-            hell1_center[0] + 15, hell1_center[1] + 15,
-            fill='black')
-        # hell
-        hell2_center = origin + np.array([UNIT, UNIT * 2])
-        self.hell2 = self.canvas.create_rectangle(
-            hell2_center[0] - 15, hell2_center[1] - 15,
-            hell2_center[0] + 15, hell2_center[1] + 15,
-            fill='black')
-
-        # create oval
-        oval_center = origin + UNIT * 2
-        self.oval = self.canvas.create_oval(
-            oval_center[0] - 15, oval_center[1] - 15,
-            oval_center[0] + 15, oval_center[1] + 15,
-            fill='yellow')
-
-        # create red rect
-        self.rect = self.canvas.create_rectangle(
-            origin[0] - 15, origin[1] - 15,
-            origin[0] + 15, origin[1] + 15,
-            fill='red')
-
-        # pack all
-        self.canvas.pack()
 
     def reset(self, channel_state):
         global ues_thr_random_global
@@ -160,6 +120,12 @@ class UserScheduling(object):
 
         channelmatrix = channel_matrix
 
+        gain_array = state.split("_")[0].split()
+        for i in range(0, n_UEs):
+            scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
+
+
+
         # print(gain_1)
         # t = gain[gain_1]
         # print(gain[gain_1])
@@ -176,15 +142,16 @@ class UserScheduling(object):
 
 
 
-    def step(self, action, observation, timer_tti, channel_chain, episode):
+    def step(self, action, observation, timer_tti, channel_chain, episode, observation_old):
         global ues_thr_random_global
-        global gain
+        global scalar_gain_array
+
         self.mapstatetovectors(observation)
         # s = self.canvas.coords(self.rect)
         s_ = copy.deepcopy(observation)
         #print("The observation is: "+str(observation))
         #R, action_optimal, action_random, action_rl = self.find_optimal_Action(observation, action)
-        R, action_random, sum_log_optimal = self.get_rates(observation, action)
+        R, action_random, sum_log_optimal, optimal_action = self.get_rates(observation, action)
         #print(s_[0])
         ues_thr_rl = copy.deepcopy(s_[0])
         ues_thr_random = ues_thr_random_global
@@ -215,7 +182,6 @@ class UserScheduling(object):
 
         #print(ues_thr_random)
 
-        s_ = np.array([ues_thr_rl, channel_chain.next_state()], dtype=object)
 
 
         #print(s_)
@@ -227,7 +193,7 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-        if timer_tti == 10:
+        if timer_tti == 2:
             done = True
             logthr_rl.append(reward)
             calc_thr_random = 0
@@ -236,13 +202,16 @@ class UserScheduling(object):
             logthr_random.append(calc_thr_random)
             logthr_optimal.append(sum_log_optimal)
 
-            if episode == 29999:
+            if reward > sum_log_optimal:
+                check = 1
+
+            if episode == 149999:
                 a = np.asarray(logthr_rl)
-                np.savetxt("logthr_rl.csv", a, delimiter=",")
+                np.savetxt("logthr_rl_150000.csv", a, delimiter=",")
                 b = np.asarray(logthr_random)
-                np.savetxt("logthr_random.csv", b, delimiter=",")
+                np.savetxt("logthr_random_150000.csv", b, delimiter=",")
                 c = np.asarray(logthr_optimal)
-                np.savetxt("logthr_optimal.csv", c, delimiter=",")
+                np.savetxt("logthr_optimal_150000.csv", c, delimiter=",")
 
 
                 #self.file_rl.write(str(logthr_rl))
@@ -250,6 +219,10 @@ class UserScheduling(object):
 
         else:
             done = False
+
+        s_ = np.array([ues_thr_rl, channel_chain.next_state()], dtype=object)
+        scalar_gain_array = []
+
         return s_, reward, done
 
 
@@ -258,24 +231,30 @@ class UserScheduling(object):
         global gain
         #self.mapstatetovectors(observation)
 
+
+
         for choice in algorithm:
+
             if choice == 'rl':
                 UE_1 = action_to_ues_tbl[action_rl][0]
                 UE_2 = action_to_ues_tbl[action_rl][1]
+                scalar_gain = [scalar_gain_array[UE_1], scalar_gain_array[UE_2]]
             elif choice == 'random':
                 action = np.random.choice(range(0, n_actions))
                 UE_1 = action_to_ues_tbl[action][0]
                 UE_2 = action_to_ues_tbl[action][1]
+                scalar_gain = [scalar_gain_array[UE_1], scalar_gain_array[UE_2]]
+
             elif choice == 'optimal':
-                max_optimal_sum_log = self.find_optimal_Action(observation)
+                max_optimal_sum_log, optimal_action = self.find_optimal_Action(observation)
                 continue;
 
 
 
 
            # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
-            gain_array = observation[1].split("_")[0]
-            gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
+            #gain_array = observation[1].split("_")[0]
+            #gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
             #print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
             channelmatrix_users = copy.deepcopy(channelmatrix)
             channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
@@ -294,9 +273,10 @@ class UserScheduling(object):
             R = []
 
             for i in range(0, len(channelmatrix_users)):
-                scalar_gain = np.random.choice(gain[gain_array[i]])
+
+                #scalar_gain = np.random.choice(gain[gain_array[i]])
                 #print("The chosen scale is: " + str(scalar_gain))
-                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain
+                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
                 S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
             for i in range(0, len(channelmatrix_users)):
                 array = list(range(0, len(channelmatrix_users)))
@@ -316,7 +296,7 @@ class UserScheduling(object):
             #print("The SINR is: " + str(SINR))
             #print(rates)
 
-        return rates, action, max_optimal_sum_log
+        return rates, action, max_optimal_sum_log, optimal_action
 
     def find_optimal_Action(self, observation):
 
@@ -331,10 +311,11 @@ class UserScheduling(object):
         for action in range(0, n_actions):
             UE_1 = action_to_ues_tbl[action][0]
             UE_2 = action_to_ues_tbl[action][1]
+            scalar_gain = [scalar_gain_array[UE_1], scalar_gain_array[UE_2]]
 
             # print("chosen UEs: " + str(UE_1) + "," + str(UE_2))
-            gain_array = observation[1].split("_")[0]
-            gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
+            #gain_array = observation[1].split("_")[0]
+            #gain_array = [gain_array.split()[UE_1], gain_array.split()[UE_2]]
             # print("The gains for the UEs are: " + str(gain_array[0]) + "," + str(gain_array[1]))
             channelmatrix_users = copy.deepcopy(channelmatrix)
             channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
@@ -353,9 +334,9 @@ class UserScheduling(object):
             R = []
 
             for i in range(0, len(channelmatrix_users)):
-                scalar_gain = np.random.choice(gain[gain_array[i]])
+                #scalar_gain = np.random.choice(gain[gain_array[i]])
                 # print("The chosen scale is: " + str(scalar_gain))
-                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain
+                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
                 S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
             for i in range(0, len(channelmatrix_users)):
                 array = list(range(0, len(channelmatrix_users)))
@@ -386,7 +367,7 @@ class UserScheduling(object):
                 tmp_max_ues_thr = copy.deepcopy(ues_thr)
         ues_thr_optimal_global = tmp_max_ues_thr
 
-        return max_sum_log
+        return max_sum_log, max_action
 
     def render(self):
         time.sleep(0.1)

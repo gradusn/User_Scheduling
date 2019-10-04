@@ -5,6 +5,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Brain_user_scheduling.py" beforeDir="false" afterPath="$PROJECT_DIR$/Brain_user_scheduling.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/User_scheduling_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/User_scheduling_env.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_user_scheduling.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_user_scheduling.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -131,23 +132,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/User_scheduling_env.py</url>
-          <line>256</line>
-          <option name="timeStamp" value="11" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/User_scheduling_env.py</url>
-          <line>313</line>
-          <option name="timeStamp" value="13" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/User_scheduling_env.py</url>
-          <line>269</line>
-          <option name="timeStamp" value="14" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/User_scheduling_env.py</url>
-          <line>382</line>
-          <option name="timeStamp" value="17" />
+          <line>213</line>
+          <option name="timeStamp" value="37" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

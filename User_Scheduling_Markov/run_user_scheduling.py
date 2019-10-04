@@ -12,15 +12,19 @@ from Brain_user_scheduling import QLearningTable
 from MarkovChain import MarkovChain
 
 import timeit
+import copy
+import itertools
 
 
 
 
 def update():
-    for episode in range(30000):
+    for episode in range(150000):
         timer_tti = 0
         # initial observation
         observation = env.reset(channel_chain.next_state())
+
+        observation_old = copy.deepcopy(observation)
 
         while True:
             timer_tti += 1
@@ -28,16 +32,19 @@ def update():
             #env.render()
 
             # RL choose action based on observation
-            action = RL.choose_action(str(observation))
+            action = RL.choose_action(str(observation), timer_tti)
 
             # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain, episode)
+            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain, episode, observation_old)
 
             # RL learn from this transition
-            RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode)
+            RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, observation_old)
 
             # swap observation
+            observation_old = copy.deepcopy(observation)
+
             observation = observation_
+
 
             # break while loop when end of this episode
             if done:
@@ -46,6 +53,20 @@ def update():
     # end of game
     print('game over')
     env.destroy()
+
+def test():
+    states = ['G G G_GB', 'G G G_BG', 'G G G_BB',
+              'G G B_GB', 'G G B_BG', 'G G B_BB',
+              'G B G_GB', 'G B G_BG', 'G B G_BB',
+              'B G G_GB', 'B G G_BG', 'B G G_BB',
+              'G B B_GB', 'G B B_BG', 'G B B_BB',
+              'B B G_GB', 'B B G_BG', 'B B G_BB',
+              'B G B_GB', 'B G B_BG', 'B G B_BB',
+              'B B B_GB', 'B B B_BG', 'B B B_BB'
+              ]
+    list(itertools.permutations([1, 2, 3]))
+
+
 
 if __name__ == "__main__":
 
@@ -70,5 +91,6 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
     update()
+    test()
     #env.after(100, update)
     #env.mainloop()

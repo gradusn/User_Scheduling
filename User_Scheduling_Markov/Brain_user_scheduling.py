@@ -24,8 +24,8 @@ class QLearningTable:
         self.epsilon_decay = epsilon_decay
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
 
-    def choose_action(self, observation):
-        self.check_state_exist(observation)
+    def choose_action(self, observation, timer_tti):
+        self.check_state_exist(observation, timer_tti)
         # action selection
         if np.random.uniform() > self.epsilon:
             # choose best action
@@ -37,13 +37,16 @@ class QLearningTable:
             action = np.random.choice(self.actions)
         return action
 
-    def learn(self, s, a, r, s_, timer_tti, episode):
-        self.check_state_exist(s_)
+    def learn(self, s, a, r, s_, timer_tti, episode, observation_old):
+        self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[s, a]
+        if (timer_tti < 2):
+            q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
+        else:
+            q_target = r   # next state is terminal
 
-        q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
-        if timer_tti == 10:
+        if timer_tti == 2:
             #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
                 #-self.epsilon_decay * episode)
             #print(self.epsilon)
@@ -53,8 +56,8 @@ class QLearningTable:
             #if episode == 5:
                 #self.test()
 
-    def check_state_exist(self, state):
-        if state not in self.q_table.index:
+    def check_state_exist(self, state, timer_tti):
+        if state not in self.q_table.index and timer_tti < 2:
             # append new state to q table
             self.q_table = self.q_table.append(
                 pd.Series(
