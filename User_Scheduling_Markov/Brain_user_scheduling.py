@@ -9,6 +9,9 @@ import numpy as np
 import pandas as pd
 
 import User_scheduling_env
+import copy
+
+import csv
 
 
 class QLearningTable:
@@ -23,6 +26,74 @@ class QLearningTable:
         self.maximum_epsilon = max_epsilon
         self.epsilon_decay = epsilon_decay
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
+
+    def testing(self, states, env):
+        actions_array = []
+        q_learning_table = pd.read_pickle("q_learning_table.pkl")
+        for i in range(0, len(states)):
+            channels = states[i]
+            create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
+            create_observation = np.array([create_rates, channels[0]], dtype=object)
+            actions = q_learning_table.loc[str(create_observation), :]
+            s_ = copy.deepcopy(create_observation)
+            rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
+
+            for j in range(1, len(channels)):
+                create_observation = np.array([rl_thr, channels[j]], dtype=object)
+                actions = q_learning_table.loc[str(create_observation), :]
+                s_ = copy.deepcopy(create_observation)
+                rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
+                if (j == len(channels)-1):
+                    log_thrs = self.get_log_thrs(rl_thr, env)
+                    with open("Log_Thr.csv", "a") as thr:
+                        thr_csv = csv.writer(thr, dialect='excel')
+                        thr_csv.writerow(log_thrs)
+                        thr.close()
+                    with open("actions.csv", "a") as action_thr:
+                        action_csv = csv.writer(action_thr, dialect='excel')
+                        action_csv.writerow(log_thrs)
+                        action_csv.writerow(actions_array)
+                        action_thr.close()
+                    env.init_for_test()
+                    actions_array = []
+                User_scheduling_env.scalar_gain_array = []
+
+    def get_log_thrs(self, rl_thr, env):
+        sum_log_thrs = []
+        thrs_algo = np.array([rl_thr, User_scheduling_env.ues_thr_random_global, User_scheduling_env.ues_thr_optimal_global])
+        for i in range(0, len(thrs_algo)):
+            sum_log = 0
+            thrs = thrs_algo[i]
+            for j in range(0, len(thrs)):
+                sum_log = sum_log + float(np.log2(thrs[j]))
+            sum_log_thrs.append(sum_log)
+        return sum_log_thrs
+
+    def create_step(self, actions, env, s_, actions_array):
+        choose_action = np.random.choice(actions[actions == np.max(actions)].index)
+        optimal_action, R, tmp_thr_optimal = env.get_rates(s_, choose_action, 'test')
+        action_random = np.random.choice(self.actions)
+        actions_array.append([choose_action, action_random, optimal_action])
+        ues_thr_rl = s_[0]
+        rl_thr = self.update_rates(R, env, ues_thr_rl, choose_action, optimal_action,tmp_thr_optimal, action_random)
+
+        return rl_thr, actions_array
+
+    def update_rates(self, rates, env, ues_thr_rl, choose_action, optimal_action, tmp_thr_optimal, action_random):
+        for algo in User_scheduling_env.algorithm:
+            if algo == 'rl':
+                thr_rl = rates[choose_action]
+                ues_thr_rl[User_scheduling_env.action_to_ues_tbl[choose_action][0]] += thr_rl[0]
+                ues_thr_rl[User_scheduling_env.action_to_ues_tbl[choose_action][1]] += thr_rl[1]
+            elif algo == 'random':
+                thr_random = rates[action_random]
+                User_scheduling_env.ues_thr_random_global[User_scheduling_env.action_to_ues_tbl[action_random][0]] += thr_random[0]
+                User_scheduling_env.ues_thr_random_global[User_scheduling_env.action_to_ues_tbl[action_random][1]] += thr_random[1]
+            else:
+                User_scheduling_env.ues_thr_optimal_global = tmp_thr_optimal
+
+        return ues_thr_rl
+
 
     def choose_action(self, observation, timer_tti):
         self.check_state_exist(observation, timer_tti)
@@ -51,6 +122,10 @@ class QLearningTable:
                 #-self.epsilon_decay * episode)
             #print(self.epsilon)
             print(episode)
+            if episode == 149999:
+                self.q_table.to_pickle("q_learning_table.pkl")
+
+
 
             #self.test2()
             #if episode == 5:
