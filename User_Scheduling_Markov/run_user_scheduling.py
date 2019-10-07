@@ -19,6 +19,11 @@ import itertools
 option = 'train'
 state_action = []
 
+alpha_GB = 0.2
+beta_GB = 1-alpha_GB
+property_to_probablity = {'G': alpha_GB, 'B': beta_GB}
+
+
 def update():
     global state_action
     for episode in range(200000):
@@ -81,25 +86,58 @@ def test():
     #size = len(states_possible)
     #print(size)
 
+def Create_transtion_matrix(states):
+    global property_to_probablity
+    transition_matrix = []
+    row_transition_matrix = []
+    probability = 1
+    for i in states:
+        row_transition_matrix = []
+        for j in states:
+            probability = 1
+            channels_1 = i.split()
+            channels_2 = j.split()
+            for k in range(0, len(channels_1)):
+                if channels_1[k] == channels_2[k]:
+                    probability = probability * property_to_probablity[channels_1[k]]
+                else:
+                    probability = probability * property_to_probablity[channels_2[k]]
+            row_transition_matrix.append(probability)
+        transition_matrix.append(row_transition_matrix)
+
+    return transition_matrix
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
 
 
-    transition_matrix = [[0.8, 0.19, 0.01],
-                         [0.2, 0.7, 0.1],
-                         [0.1, 0.2, 0.7]]
+    alpha_GB = 0.5
+    Beta_GB = 1-alpha_GB
 
-    channel_chain = MarkovChain(transition_matrix=transition_matrix,
-                                states=['G G G_GB', 'G G G_BG', 'G G G_BB',
-                                        'G G B_GB', 'G G B_BG', 'G G B_BB',
-                                        'G B G_GB', 'G B G_BG', 'G B G_BB',
-                                        'B G G_GB', 'B G G_BG', 'B G G_BB',
-                                        'G B B_GB', 'G B B_BG', 'G B B_BB',
-                                        'B B G_GB', 'B B G_BG', 'B B G_BB',
-                                        'B G B_GB', 'B G B_BG', 'B G B_BB',
-                                        'B B B_GB', 'B B B_BG', 'B B B_BB'
-                                        ])
+    states = ['G G G',
+              'G G B',
+              'G B G',
+              'B G G',
+              'G B B',
+              'B B G',
+              'B G B',
+              'B B B'
+              ]
+    transition_matrix_channel = Create_transtion_matrix(states)
+
+
+
+    channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
+                                states=states)
 
 
 
