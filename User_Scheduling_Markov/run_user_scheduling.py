@@ -17,12 +17,15 @@ import itertools
 
 
 option = 'train'
+state_action = []
 
 def update():
-    for episode in range(150000):
+    global state_action
+    for episode in range(200000):
         timer_tti = 0
         # initial observation
         observation = env.reset(channel_chain.next_state())
+        #observation = env.reset('B G B_BB')
 
         observation_old = copy.deepcopy(observation)
 
@@ -31,11 +34,14 @@ def update():
             # fresh env
             #env.render()
 
+            state_action_old = copy.deepcopy(state_action)
+
             # RL choose action based on observation
-            action = RL.choose_action(str(observation), timer_tti)
+            action, state_action = RL.choose_action(str(observation), timer_tti)
+
 
             # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain, episode, observation_old, option)
+            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old)
 
             # RL learn from this transition
             RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, observation_old)
@@ -66,6 +72,7 @@ def test():
               'B G B_GB', 'B G B_BG', 'B G B_BB',
               'B B B_GB', 'B B B_BG', 'B B B_BB'
               ]
+    states_test = [('B G B_BG', 'B B G_BG')]
 
     states_possible = [p for p in itertools.product(states, repeat=2)]
     env.init_for_test()

@@ -26,10 +26,11 @@ class QLearningTable:
         self.maximum_epsilon = max_epsilon
         self.epsilon_decay = epsilon_decay
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
+        #self.q_table = pd.read_pickle("q_learning_table_200000_train.pkl")
 
     def testing(self, states, env):
         actions_array = []
-        q_learning_table = pd.read_pickle("q_learning_table.pkl")
+        q_learning_table = pd.read_pickle("q_learning_table_200000_train_check.pkl")
         for i in range(0, len(states)):
             channels = states[i]
             create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
@@ -51,12 +52,10 @@ class QLearningTable:
                         thr.close()
                     with open("actions.csv", "a") as action_thr:
                         action_csv = csv.writer(action_thr, dialect='excel')
-                        action_csv.writerow(log_thrs)
                         action_csv.writerow(actions_array)
                         action_thr.close()
                     env.init_for_test()
                     actions_array = []
-                User_scheduling_env.scalar_gain_array = []
 
     def get_log_thrs(self, rl_thr, env):
         sum_log_thrs = []
@@ -99,31 +98,39 @@ class QLearningTable:
         self.check_state_exist(observation, timer_tti)
         # action selection
         if np.random.uniform() > self.epsilon:
+
             # choose best action
             state_action = self.q_table.loc[observation, :]
             # some actions may have the same value, randomly choose on in these actions
+            if np.max(state_action) != 0:
+                User_scheduling_env.best_action = 1
+            else:
+                User_scheduling_env.best_action = 0
             action = np.random.choice(state_action[state_action == np.max(state_action)].index)
         else:
             # choose random action
             action = np.random.choice(self.actions)
-        return action
+            User_scheduling_env.best_action = 0
+            state_action = []
+
+        return action, state_action
 
     def learn(self, s, a, r, s_, timer_tti, episode, observation_old):
         self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[s, a]
-        if (timer_tti < 2):
+        if (timer_tti < 3):
             q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
         else:
             q_target = r   # next state is terminal
 
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
-        if timer_tti == 2:
+        if timer_tti == 3:
             #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
                 #-self.epsilon_decay * episode)
             #print(self.epsilon)
             print(episode)
-            if episode == 149999:
-                self.q_table.to_pickle("q_learning_table.pkl")
+            if episode == 199999:
+                self.q_table.to_pickle("q_learning_table_200000_train_3_tti.pkl")
 
 
 
@@ -132,7 +139,7 @@ class QLearningTable:
                 #self.test()
 
     def check_state_exist(self, state, timer_tti):
-        if state not in self.q_table.index and timer_tti < 2:
+        if state not in self.q_table.index and timer_tti < 3:
             # append new state to q table
             self.q_table = self.q_table.append(
                 pd.Series(
