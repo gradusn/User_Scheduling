@@ -132,6 +132,7 @@ if __name__ == "__main__":
               'B G B',
               'B B B'
               ]
+
     transition_matrix_channel = Create_transtion_matrix(states)
 
 
