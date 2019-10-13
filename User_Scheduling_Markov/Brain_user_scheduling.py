@@ -30,7 +30,7 @@ class QLearningTable:
 
     def testing(self, states, env):
         actions_array = []
-        q_learning_table = pd.read_pickle("q_learning_table_200000_train_check.pkl")
+        q_learning_table = pd.read_pickle("q_learning_table_Markov_2_tti_500000.pkl")
         for i in range(0, len(states)):
             channels = states[i]
             create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
