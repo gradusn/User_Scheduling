@@ -118,19 +118,19 @@ class QLearningTable:
     def learn(self, s, a, r, s_, timer_tti, episode, observation_old):
         self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[s, a]
-        if (timer_tti < 3):
+        if (timer_tti < 2):
             q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
         else:
             q_target = r   # next state is terminal
 
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
-        if timer_tti == 3:
+        if timer_tti == 2:
             #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
                 #-self.epsilon_decay * episode)
             #print(self.epsilon)
             print(episode)
-            if episode == 199999:
-                self.q_table.to_pickle("q_learning_table_200000_train_3_tti.pkl")
+            if episode == 499999:
+                self.q_table.to_pickle("q_learning_table_Markov_2_tti_500000.pkl")
 
 
 
@@ -139,7 +139,7 @@ class QLearningTable:
                 #self.test()
 
     def check_state_exist(self, state, timer_tti):
-        if state not in self.q_table.index and timer_tti < 3:
+        if state not in self.q_table.index and timer_tti < 2:
             # append new state to q table
             self.q_table = self.q_table.append(
                 pd.Series(

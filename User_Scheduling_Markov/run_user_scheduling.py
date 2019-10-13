@@ -14,22 +14,30 @@ from MarkovChain import MarkovChain
 import timeit
 import copy
 import itertools
+import numpy as np
+
 
 
 option = 'train'
 state_action = []
 
-alpha_GB = 0.2
-beta_GB = 1-alpha_GB
-property_to_probablity = {'G': alpha_GB, 'B': beta_GB}
+alpha_GB = 0.8
+beta_GB = 0.8
+property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
+corr_probability = 0.8
+
 
 
 def update():
     global state_action
-    for episode in range(200000):
+    global start_state
+    for episode in range(500000):
         timer_tti = 0
         # initial observation
-        observation = env.reset(channel_chain.next_state())
+        start_state = channel_chain.next_state(start_state)
+        channels = env.create_channel(start_state, corr_chain.next_state(0))
+        observation = env.reset(channels)
+
         #observation = env.reset('B G B_BB')
 
         observation_old = copy.deepcopy(observation)
@@ -46,7 +54,7 @@ def update():
 
 
             # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action, observation, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old)
+            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old)
 
             # RL learn from this transition
             RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, observation_old)
@@ -99,9 +107,9 @@ def Create_transtion_matrix(states):
             channels_2 = j.split()
             for k in range(0, len(channels_1)):
                 if channels_1[k] == channels_2[k]:
-                    probability = probability * property_to_probablity[channels_1[k]]
+                    probability = probability * property_to_probablity[channels_1[k]][0]
                 else:
-                    probability = probability * property_to_probablity[channels_2[k]]
+                    probability = probability * property_to_probablity[channels_1[k]][1]
             row_transition_matrix.append(probability)
         transition_matrix.append(row_transition_matrix)
 
@@ -120,8 +128,7 @@ def Create_transtion_matrix(states):
 if __name__ == "__main__":
 
 
-    alpha_GB = 0.5
-    Beta_GB = 1-alpha_GB
+
 
     states = ['G G G',
               'G G B',
@@ -133,19 +140,17 @@ if __name__ == "__main__":
               'B B B'
               ]
 
+    corr = ['GB', 'BG', 'BB']
+
+    transition_matrix_corr = [[]]
+    corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
     transition_matrix_channel = Create_transtion_matrix(states)
-
-
-
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
                                 states=states)
 
-
-
-
-
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
+    start_state = np.random.choice(states)
     update()
     #test()
     #env.after(100, update)

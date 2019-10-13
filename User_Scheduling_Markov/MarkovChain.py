@@ -23,7 +23,7 @@ class MarkovChain(object):
         self.state_dict = {index: self.states[index] for index in
                            range(len(self.states))}
 
-    def next_state(self):
+    def next_state(self, current_state):
         """
         Returns the state of the random variable at the next time 
         instance.
@@ -33,9 +33,15 @@ class MarkovChain(object):
         current_state: str
             The current state of the system.
         """
-        return np.random.choice(
-            self.states
-        )
+        if(current_state !=0 ):
+            #print(self.transition_matrix[self.index_dict[current_state], :])
+            return np.random.choice(
+                self.states,
+                p=self.transition_matrix[self.index_dict[current_state], :]
+            )
+        else:
+            return np.random.choice(self.states)
+
 
     def generate_states(self, current_state, no=10):
         """

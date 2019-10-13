@@ -18,7 +18,6 @@ import pandas as pd
 from sympy import binomial
 import math
 import copy
-from MarkovChain import MarkovChain
 import csv
 
 from scipy.stats.stats import pearsonr
@@ -78,6 +77,10 @@ class UserScheduling(object):
         # self.title('User_scheduling')
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
+    def create_channel(self, channels_gain, channels_corr):
+        return str(channels_gain)+str("_")+str(channels_corr)
+
+
 
     def reset(self, channel_state):
         array = np.ones((n_UEs,), dtype=float)
@@ -117,7 +120,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old):
+    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -144,12 +147,12 @@ class UserScheduling(object):
 
 
 
-        if timer_tti == 3:
+        if timer_tti == 2:
             done = True
             optimal_sum_log = 0
             for i in range(0, len(tmp_thr_optimal)):
                 optimal_sum_log = optimal_sum_log + float(np.log2(tmp_thr_optimal[i]))
-
+            '''
             with open("reward_sum_log_3_tti.csv", "a") as reward_sum_log:
                 reward_sum_log_csv = csv.writer(reward_sum_log, dialect='excel')
                 reward_sum_log_csv.writerow([reward])
@@ -168,14 +171,16 @@ class UserScheduling(object):
 
                 old_optimal_action = []
                 old_action = []
+            '''
         else:
             done = False
             ues_thr_optimal_global = tmp_thr_optimal
-
-        s_ = np.array([ues_thr_rl, channel_chain.next_state()], dtype=object)
+        next_channel_state = channel_chain.next_state(state)
+        channels = self.create_channel(next_channel_state, corr_chain.next_state(0))
+        s_ = np.array([ues_thr_rl, channels], dtype=object)
         #s_ = np.array([ues_thr_rl, 'B B G_GB'], dtype=object)
 
-        return s_, reward, done
+        return s_, reward, next_channel_state,  done
 
     def get_rates(self, observation, action_rl, option):
         global scalar_gain_array
