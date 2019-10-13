@@ -11,6 +11,7 @@ from User_scheduling_env import UserScheduling
 from Brain_user_scheduling import QLearningTable
 from MarkovChain import MarkovChain
 
+
 import timeit
 import copy
 import itertools
@@ -26,41 +27,38 @@ beta_GB = 0.8
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
+max_episodes = 5000000
 
 
 def update():
     global state_action
     global start_state
-    for episode in range(500000):
+    for episode in range(max_episodes):
         timer_tti = 0
         # initial observation
-        start_state = channel_chain.next_state(start_state)
+        #start_state = channel_chain.next_state(start_state)
         channels = env.create_channel(start_state, corr_chain.next_state(0))
         observation = env.reset(channels)
 
-        #observation = env.reset('B G B_BB')
 
-        observation_old = copy.deepcopy(observation)
 
         while True:
             timer_tti += 1
             # fresh env
             #env.render()
 
-            state_action_old = copy.deepcopy(state_action)
 
             # RL choose action based on observation
-            action, state_action = RL.choose_action(str(observation), timer_tti)
+            action = RL.choose_action(str(observation), timer_tti)
 
 
             # RL take action and get next observation and reward
-            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old)
+            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode, option )
 
             # RL learn from this transition
-            RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, observation_old)
+            RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
 
             # swap observation
-            observation_old = copy.deepcopy(observation)
 
             observation = observation_
 
