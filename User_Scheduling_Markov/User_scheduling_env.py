@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-
+max_time_slots = 3
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -120,7 +120,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode, observation_old, option, state_action, state_action_old):
+    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode, option):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -130,12 +130,12 @@ class UserScheduling(object):
 
         s_ = copy.deepcopy(observation)
         R, tmp_thr_optimal, optimal_action = self.get_rates(observation, action, option)
-        old_optimal_action.append(optimal_action)
-        old_action.append(action)
+        #old_optimal_action.append(optimal_action)
+        #old_action.append(action)
 
         ues_thr_rl = copy.deepcopy(s_[0])
 
-        thr_rl = R[action]
+        thr_rl = R[0]
 
         ues_thr_rl[action_to_ues_tbl[action][0]] += thr_rl[0]
         ues_thr_rl[action_to_ues_tbl[action][1]] += thr_rl[1]
@@ -147,11 +147,13 @@ class UserScheduling(object):
 
 
 
-        if timer_tti == 2:
+        if timer_tti == max_time_slots:
             done = True
+            '''
             optimal_sum_log = 0
             for i in range(0, len(tmp_thr_optimal)):
                 optimal_sum_log = optimal_sum_log + float(np.log2(tmp_thr_optimal[i]))
+            '''
             '''
             with open("reward_sum_log_3_tti.csv", "a") as reward_sum_log:
                 reward_sum_log_csv = csv.writer(reward_sum_log, dialect='excel')
@@ -174,7 +176,7 @@ class UserScheduling(object):
             '''
         else:
             done = False
-            ues_thr_optimal_global = tmp_thr_optimal
+            #ues_thr_optimal_global = tmp_thr_optimal
         next_channel_state = channel_chain.next_state(state)
         channels = self.create_channel(next_channel_state, corr_chain.next_state(0))
         s_ = np.array([ues_thr_rl, channels], dtype=object)
@@ -189,7 +191,7 @@ class UserScheduling(object):
         global gain
         actions = np.arange(n_UEs)
         if option == 'train':
-            #actions = [action_rl]
+            actions = [action_rl]
             optimal_action, rates_per_algo, tmp_thr_optimal = self.find_optimal_action(observation, actions, option)
             return rates_per_algo, tmp_thr_optimal, optimal_action
         else:
@@ -238,7 +240,7 @@ class UserScheduling(object):
                 SINR.append(S[i] / (1 + N[i]))
                 R.append(math.log((1 + SINR[i]), 2))
             rates.append(R)
-            if option == 'test' or option =='train':
+            if option == 'test':
                 ues_thr = copy.deepcopy(ues_thr_optimal_global)
                 ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
                 ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
