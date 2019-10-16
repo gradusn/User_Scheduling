@@ -22,12 +22,12 @@ import numpy as np
 option = 'train'
 state_action = []
 
-alpha_GB = 0.8
-beta_GB = 0.8
+alpha_GB = 0.9
+beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 5000000
+max_episodes = 4000000
 
 
 def update():
@@ -37,6 +37,7 @@ def update():
         timer_tti = 0
         # initial observation
         #start_state = channel_chain.next_state(start_state)
+        start_state = np.random.choice(states)
         channels = env.create_channel(start_state, corr_chain.next_state(0))
         observation = env.reset(channels)
 
@@ -148,8 +149,7 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    start_state = np.random.choice(states)
-    #update()
-    test()
+    update()
+    #test()
     #env.after(100, update)
     #env.mainloop()

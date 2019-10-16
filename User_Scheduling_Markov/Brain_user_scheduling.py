@@ -26,11 +26,22 @@ class QLearningTable:
         self.maximum_epsilon = max_epsilon
         self.epsilon_decay = epsilon_decay
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
-        #self.q_table = pd.read_pickle("q_learning_table_200000_train.pkl")
-
+        #self.q_table = pd.read_pickle("q_learning_table_Markov_2_tti_2000000.pkl")
+    '''    
+    def testing_markov(self, state, corr_state):
+        actions_array = []
+        q_learning_table = pd.read_pickle("q_learning_table_Markov_2_tti_1000000.pkl")
+        channels = User_scheduling_env.create_channel(state, corr_state)
+        create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
+        create_observation = np.array([create_rates, channels[0]], dtype=object)
+        actions = q_learning_table.loc[str(create_observation), :]
+        s_ = copy.deepcopy(create_observation)
+        rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
+        
+    '''
     def testing(self, states, env):
         actions_array = []
-        q_learning_table = pd.read_pickle("q_learning_table_Markov_2_tti_500000.pkl")
+        q_learning_table = pd.read_pickle("q_learning_table_Markov_2_tti_4000000.pkl")
         for i in range(0, len(states)):
             channels = states[i]
             create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
@@ -46,11 +57,11 @@ class QLearningTable:
                 rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
                 if (j == len(channels)-1):
                     log_thrs = self.get_log_thrs(rl_thr, env)
-                    with open("Log_Thr.csv", "a") as thr:
+                    with open("Log_Thr_Markov_2_tti_4000000.csv", "a") as thr:
                         thr_csv = csv.writer(thr, dialect='excel')
                         thr_csv.writerow(log_thrs)
                         thr.close()
-                    with open("actions.csv", "a") as action_thr:
+                    with open("actions_Markov_2_tti_4000000.csv", "a") as action_thr:
                         action_csv = csv.writer(action_thr, dialect='excel')
                         action_csv.writerow(actions_array)
                         action_thr.close()
@@ -129,7 +140,7 @@ class QLearningTable:
             #print(self.epsilon)
             print(episode)
             if episode == max_episodes-1:
-                self.q_table.to_pickle("q_learning_table_Markov_3_tti_5000000.pkl")
+                self.q_table.to_pickle("q_learning_table_Markov_0.9_random_after_episode_2_tti_4000000.pkl")
 
 
 
