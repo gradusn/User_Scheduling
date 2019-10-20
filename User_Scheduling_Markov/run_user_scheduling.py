@@ -22,12 +22,12 @@ import numpy as np
 option = 'train'
 state_action = []
 
-alpha_GB = 0.9
-beta_GB = 0.9
+alpha_GB = 1
+beta_GB = 1
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 4000000
+max_episodes = 6000000
 
 
 def update():
@@ -71,6 +71,11 @@ def update():
     # end of game
     print('training over')
     #env.destroy()
+
+def test_markov():
+    start_state = np.random.choice(states)
+    env.init_for_test()
+    RL.testing_markov(start_state, channel_chain, corr_chain, env)
 
 def test():
     global option
@@ -149,7 +154,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
+    #update()
     #test()
+    test_markov()
     #env.after(100, update)
     #env.mainloop()

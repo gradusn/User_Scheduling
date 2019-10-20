@@ -242,6 +242,8 @@ class UserScheduling(object):
             rates.append(R)
             if option == 'test':
                 ues_thr = copy.deepcopy(ues_thr_optimal_global)
+                ues_ri_ti_0 = rates[action][0] / ues_thr[action_to_ues_tbl[action][0]]
+                ues_ri_ti_1 = rates[action][1] / ues_thr[action_to_ues_tbl[action][1]]
                 ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
                 ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
                 sum_log = 0

@@ -14,8 +14,13 @@ import copy
 import csv
 
 
+import MarkovChain
+
+max_testing_episodes = 1000
+
+
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.1, max_epsilon=1.0, min_epsilon=0.01,
+    def __init__(self, actions, learning_rate=0.8, reward_decay=1, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
                  epsilon_decay=0.001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
@@ -39,6 +44,40 @@ class QLearningTable:
         rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
         
     '''
+
+    def testing_markov(self, start_state, channel_chain, corr_chain, env):
+        q_learning_table = pd.read_pickle("q_learning_table_Markov_static_epsilon_decay_2_tti_6000000.pkl")
+
+        for episode in range(0, max_testing_episodes):
+            print(episode)
+            actions_array = []
+            create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
+            channels = env.create_channel(start_state, corr_chain.next_state(0))
+            create_observation = np.array([create_rates, channels], dtype=object)
+            actions = q_learning_table.loc[str(create_observation), :]
+            s_ = copy.deepcopy(create_observation)
+            rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
+            for i in range(1, User_scheduling_env.max_time_slots):
+                start_state = channel_chain.next_state(start_state)
+                channels = env.create_channel(start_state, corr_chain.next_state(0))
+                create_observation = np.array([rl_thr, channels], dtype=object)
+                actions = q_learning_table.loc[str(create_observation), :]
+                s_ = copy.deepcopy(create_observation)
+                rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
+                if (i == User_scheduling_env.max_time_slots-1):
+                    log_thrs = self.get_log_thrs(rl_thr)
+                    with open("Log_Thr_Markov_2_tti_test_static_epsilon_decay_6000000.csv", "a") as thr:
+                        thr_csv = csv.writer(thr, dialect='excel')
+                        thr_csv.writerow(log_thrs)
+                        thr.close()
+                    with open("actions_Markov_2_tti_test_static_epsilon_decay_6000000.csv", "a") as action_thr:
+                        action_csv = csv.writer(action_thr, dialect='excel')
+                        action_csv.writerow(actions_array)
+                        action_thr.close()
+                    env.init_for_test()
+                    actions_array = []
+                    start_state = channel_chain.next_state(0)
+
     def testing(self, states, env):
         actions_array = []
         q_learning_table = pd.read_pickle("q_learning_table_Markov_2_tti_4000000.pkl")
@@ -68,7 +107,7 @@ class QLearningTable:
                     env.init_for_test()
                     actions_array = []
 
-    def get_log_thrs(self, rl_thr, env):
+    def get_log_thrs(self, rl_thr):
         sum_log_thrs = []
         thrs_algo = np.array([rl_thr, User_scheduling_env.ues_thr_random_global, User_scheduling_env.ues_thr_optimal_global])
         for i in range(0, len(thrs_algo)):
@@ -85,11 +124,11 @@ class QLearningTable:
         action_random = np.random.choice(self.actions)
         actions_array.append([choose_action, action_random, optimal_action])
         ues_thr_rl = s_[0]
-        rl_thr = self.update_rates(R, env, ues_thr_rl, choose_action, optimal_action,tmp_thr_optimal, action_random)
+        rl_thr = self.update_rates(R, ues_thr_rl, choose_action, optimal_action, tmp_thr_optimal, action_random)
 
         return rl_thr, actions_array
 
-    def update_rates(self, rates, env, ues_thr_rl, choose_action, optimal_action, tmp_thr_optimal, action_random):
+    def update_rates(self, rates, ues_thr_rl, choose_action, optimal_action, tmp_thr_optimal, action_random):
         for algo in User_scheduling_env.algorithm:
             if algo == 'rl':
                 thr_rl = rates[choose_action]
@@ -140,7 +179,7 @@ class QLearningTable:
             #print(self.epsilon)
             print(episode)
             if episode == max_episodes-1:
-                self.q_table.to_pickle("q_learning_table_Markov_0.9_random_after_episode_2_tti_4000000.pkl")
+                self.q_table.to_pickle("q_learning_table_Markov_0.9_gamma_1_epsilon_0.2_2_tti_6000000.pkl")
 
 
 
