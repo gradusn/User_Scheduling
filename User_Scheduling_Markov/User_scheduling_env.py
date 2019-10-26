@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 2
+max_time_slots = 3
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -34,7 +34,7 @@ n_UEs = 3
 comb = combinations(np.arange(n_UEs), 2)
 action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
-algorithm = ['rl', 'random', 'optimal']
+algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
@@ -52,6 +52,7 @@ logthr_optimal = []
 
 ues_thr_random_global = []
 ues_thr_optimal_global = []
+ues_thr_ri_ti_global = []
 
 scalar_gain_array = []
 
@@ -87,15 +88,19 @@ class UserScheduling(object):
         observations = np.array([array, channel_state], dtype=object)
         global ues_thr_random_global
         global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
         ues_thr_random_global = np.ones((n_UEs,), dtype=float)
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
+        ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
         return observations
 
     def init_for_test(self):
         global ues_thr_random_global
         global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
         ues_thr_random_global = np.ones((n_UEs,), dtype=float)
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
+        ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
 
     def mapstatetovectors(self, state):
 
@@ -195,16 +200,21 @@ class UserScheduling(object):
             optimal_action, rates_per_algo, tmp_thr_optimal = self.find_optimal_action(observation, actions, option)
             return rates_per_algo, tmp_thr_optimal, optimal_action
         else:
-            optimal_action, rates_per_algo, tmp_thr_optimal = self.find_optimal_action(observation, actions, option)
-            return optimal_action, rates_per_algo, tmp_thr_optimal
+            optimal_action, rates_per_algo, tmp_thr_optimal, tmp_thr_ri_ti, action_ri_ti = self.find_optimal_action(observation, actions, option)
+            return optimal_action, rates_per_algo, tmp_thr_optimal, tmp_thr_ri_ti, action_ri_ti
 
     def find_optimal_action(self, observation, actions_array, option):
         max_sum_log = 0
+        max_ri_ti = 0
         rates = []
         global gain
         global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
         tmp_max_ues_thr = []
+        tmp_max_ri_ti_thr = []
+
         max_action = 0
+        max_ri_ti_action = 0
         for action in actions_array:
             UE_1 = action_to_ues_tbl[action][0]
             UE_2 = action_to_ues_tbl[action][1]
@@ -242,10 +252,20 @@ class UserScheduling(object):
             rates.append(R)
             if option == 'test':
                 ues_thr = copy.deepcopy(ues_thr_optimal_global)
-                ues_ri_ti_0 = rates[action][0] / ues_thr[action_to_ues_tbl[action][0]]
-                ues_ri_ti_1 = rates[action][1] / ues_thr[action_to_ues_tbl[action][1]]
+                ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
+                ues_ri_ti_0 = rates[action][0] / ues_ri_ti_thr[action_to_ues_tbl[action][0]]
+                ues_ri_ti_1 = rates[action][1] / ues_ri_ti_thr[action_to_ues_tbl[action][1]]
+
+                ues_ri_ti_thr[action_to_ues_tbl[action][0]] += rates[action][0]
+                ues_ri_ti_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+
                 ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
                 ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+                sum_ri_ti = ues_ri_ti_0 + ues_ri_ti_1
+                if max_ri_ti <= sum_ri_ti:
+                    max_ri_ti_action = action
+                    max_ri_ti = sum_ri_ti
+                    tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
                 sum_log = 0
                 for i in range(0, len(ues_thr)):
                     sum_log = sum_log + float(np.log2(ues_thr[i]))
@@ -256,7 +276,7 @@ class UserScheduling(object):
         #ues_thr_optimal_global = tmp_max_ues_thr
 
 
-        return  max_action, rates, tmp_max_ues_thr
+        return  max_action, rates, tmp_max_ues_thr, tmp_max_ri_ti_thr, max_ri_ti_action
 
     def render(self):
         time.sleep(0.1)

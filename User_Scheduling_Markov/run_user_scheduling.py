@@ -16,18 +16,20 @@ import timeit
 import copy
 import itertools
 import numpy as np
+import csv
 
 
 
 option = 'train'
 state_action = []
 
-alpha_GB = 1
-beta_GB = 1
+alpha_GB = 0.9
+beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
 max_episodes = 6000000
+max_runs_stats = 500
 
 
 def update():
@@ -73,9 +75,19 @@ def update():
     #env.destroy()
 
 def test_markov():
-    start_state = np.random.choice(states)
-    env.init_for_test()
-    RL.testing_markov(start_state, channel_chain, corr_chain, env)
+    avg_run = []
+
+    for i in range(0, max_runs_stats):
+        print (i)
+        start_state = np.random.choice(states)
+        corr_state = np.random.choice(corr)
+        env.init_for_test()
+        avg_run = RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state, avg_run)
+        with open("Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_avg_500_runs.csv", "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(avg_run)
+            thr.close()
+
 
 def test():
     global option
@@ -146,7 +158,7 @@ if __name__ == "__main__":
 
     corr = ['GB', 'BG', 'BB']
 
-    transition_matrix_corr = [[]]
+    transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
     transition_matrix_channel = Create_transtion_matrix(states)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
