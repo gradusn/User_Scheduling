@@ -19,7 +19,7 @@ import csv
 
 import MarkovChain
 
-max_testing_episodes = 1000
+max_testing_episodes = 200000
 
 
 class QLearningTable:
@@ -48,11 +48,11 @@ class QLearningTable:
         
     '''
 
-    def testing_markov(self, start_state, channel_chain, corr_chain, env, corr_state, avg_run):
+    def testing_markov(self, start_state, channel_chain, corr_chain, env, corr_state):
         q_learning_table = pd.read_pickle("q_learning_table_Markov_0.9_epsilon_decay_3_tti_20000000.pkl")
         diff = []
         for episode in range(0, max_testing_episodes):
-            #print(episode)
+            print(episode)
             actions_array = []
             create_rates = np.ones((User_scheduling_env.n_UEs,), dtype=float)
             channels = env.create_channel(start_state, corr_state)
@@ -83,8 +83,13 @@ class QLearningTable:
                     actions_array = []
                     start_state = channel_chain.next_state(0)
                     corr_state = corr_chain.next_state(0)
-        avg_run = statistics.mean(diff)
-        return avg_run
+        with open("Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_all_thr_200000_runs.csv", "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(diff)
+            thr.close()
+
+        #avg_run = statistics.mean(diff)
+        #return avg_run
 
     def testing(self, states, env):
         actions_array = []

@@ -18,7 +18,8 @@ import itertools
 import numpy as np
 import csv
 
-
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 option = 'train'
 state_action = []
@@ -75,19 +76,28 @@ def update():
     #env.destroy()
 
 def test_markov():
-    avg_run = []
+    start_state = np.random.choice(states)
+    corr_state = np.random.choice(corr)
+    env.init_for_test()
+    #RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state)
+    data = np.genfromtxt('Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_all_thr_200000_runs.csv', delimiter = ',')
+    sns.set(color_codes=True)
+    sns.distplot(data, kde=False)
+    plt.show()
 
-    for i in range(0, max_runs_stats):
-        print (i)
-        start_state = np.random.choice(states)
-        corr_state = np.random.choice(corr)
-        env.init_for_test()
-        avg_run = RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state, avg_run)
-        with open("Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_avg_500_runs.csv", "a") as thr:
-            thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(avg_run)
-            thr.close()
+    #avg_run = []
 
+    #for i in range(0, max_runs_stats):
+        #print (i)
+        #start_state = np.random.choice(states)
+        #corr_state = np.random.choice(corr)
+        #env.init_for_test()
+        #avg_run.append(RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state, avg_run))
+
+    #with open("Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_avg_500_runs.csv", "a") as thr:
+        #thr_csv = csv.writer(thr, dialect='excel')
+        #thr_csv.writerow(avg_run)
+        #thr.close()
 
 def test():
     global option
@@ -106,6 +116,7 @@ def test():
     states_possible = [p for p in itertools.product(states, repeat=2)]
     env.init_for_test()
     RL.testing(states_possible, env)
+
     #example = [x for x in itertools.product([1,2,3], repeat=2)]
     #size = len(states_possible)
     #print(size)
