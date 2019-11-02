@@ -49,7 +49,7 @@ class QLearningTable:
     '''
 
     def testing_markov(self, start_state, channel_chain, corr_chain, env, corr_state):
-        q_learning_table = pd.read_pickle("q_learning_table_Markov_0.9_epsilon_decay_3_tti_20000000.pkl")
+        q_learning_table = pd.read_pickle("q_learning_table_Markov_0.9_4_tti_60000000.pkl")
         diff = []
         for episode in range(0, max_testing_episodes):
             print(episode)

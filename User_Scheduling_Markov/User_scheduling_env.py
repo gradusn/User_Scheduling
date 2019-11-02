@@ -31,6 +31,7 @@ UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
 n_UEs = 3
+n_Tx = 2
 comb = combinations(np.arange(n_UEs), 2)
 action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -42,6 +43,8 @@ channel_vectors = np.array(
 gain = {'G': [3, 3], 'B': [0.5, 0.5]}
 
 channelmatrix = [[]]
+
+H = []
 
 n_actions = binomial(n_UEs, 2)
 
@@ -101,6 +104,49 @@ class UserScheduling(object):
         ues_thr_random_global = np.ones((n_UEs,), dtype=float)
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
         ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
+
+    def create_guass_vectors(self):
+        mean = 0
+        standart_deviation = np.sqrt(0.5)
+        global H
+        H = []
+        for i in range(0, n_UEs):
+            vector = []
+            for j in range(0, n_Tx):
+                real = np.random.normal(mean, standart_deviation)
+                img = np.random.normal(mean, standart_deviation)
+                vector.append(complex(real, img))
+            vector = vector / np.sqrt(np.power(np.absolute(vector[0]),2)+np.power(np.absolute(vector[1]),2))
+            H.append(vector)
+        H = np.array(H)
+        bins_corr = self.find_angles()
+        return bins_corr
+
+    def find_angles(self):
+        angles = []
+        for i in range(0, len(action_to_ues_tbl)):
+            UE_1 = action_to_ues_tbl[i][0]
+            UE_2 = action_to_ues_tbl[i][1]
+            channelmatrix_users = H[[UE_1, UE_2], :]
+            dot_product = np.vdot(channelmatrix_users[1], channelmatrix_users[0])
+            #test_dot = np.dot(channelmatrix_users[1], channelmatrix_users[0])
+            real = dot_product.real
+            norm_v1 = np.sqrt(np.power(np.absolute(channelmatrix_users[0][0]), 2)+np.power(np.absolute(channelmatrix_users[0][1]), 2))
+            norm_v2 = np.sqrt(np.power(np.absolute(channelmatrix_users[1][0]), 2)+np.power(np.absolute(channelmatrix_users[1][1]), 2))
+
+            angle = np.arccos(real / (norm_v1*norm_v2))
+            angles.append(np.degrees(angle))
+        angles = np.array(angles)
+        cut_labels_6 = ['1', '2', '3', '4','5','6']
+        cut_bins = [0, 30, 60, 90, 120, 150, 180]
+        binned = pd.cut(angles, bins=cut_bins, labels=cut_labels_6)
+        return str(binned[0]+binned[1]+binned[2])
+
+    def gains(self, state):
+        state = state[1]
+        gain_array = state.split("_")[0].split()
+        for i in range(0, n_UEs):
+            scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
     def mapstatetovectors(self, state):
 
@@ -192,16 +238,102 @@ class UserScheduling(object):
     def get_rates(self, observation, action_rl, option):
         global scalar_gain_array
         scalar_gain_array = []
-        self.mapstatetovectors(observation)
+        #self.create_guass_vectors()
+        self.gains(observation)
+        #self.mapstatetovectors(observation)
         global gain
         actions = np.arange(n_UEs)
         if option == 'train':
             actions = [action_rl]
-            optimal_action, rates_per_algo, tmp_thr_optimal = self.find_optimal_action(observation, actions, option)
+            optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
             return rates_per_algo, tmp_thr_optimal, optimal_action
         else:
             optimal_action, rates_per_algo, tmp_thr_optimal, tmp_thr_ri_ti, action_ri_ti = self.find_optimal_action(observation, actions, option)
             return optimal_action, rates_per_algo, tmp_thr_optimal, tmp_thr_ri_ti, action_ri_ti
+
+    def find_action(self, observation, actions_array, option):
+        max_sum_log = 0
+        max_ri_ti = 0
+        rates = []
+        global gain
+        global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
+        tmp_max_ues_thr = []
+        tmp_max_ri_ti_thr = []
+
+        max_action = 0
+        max_ri_ti_action = 0
+        for action in actions_array:
+            UE_1 = action_to_ues_tbl[action][0]
+            UE_2 = action_to_ues_tbl[action][1]
+            scalar_gain = [scalar_gain_array[UE_1], scalar_gain_array[UE_2]]
+            channelmatrix_users = copy.deepcopy(H)
+            channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
+            h_inv = np.linalg.pinv(channelmatrix_users)
+            h_inv_tra = np.transpose(h_inv)
+            # Normalizing the inverse channel matrix
+
+            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.power(np.absolute(h_inv_tra[0][0]),2)+np.power(np.absolute(h_inv_tra[0][1]),2))
+            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.power(np.absolute(h_inv_tra[1][0]),2)+np.power(np.absolute(h_inv_tra[1][1]),2))
+            S = []
+            N = []
+            sum = 0
+            SINR = []
+            R = []
+
+            for i in range(0, len(channelmatrix_users)):
+                #channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
+                S.append(np.power(np.absolute(np.vdot(h_inv_tra[i], channelmatrix_users[i, :])),2))
+            for i in range(0, len(channelmatrix_users)):
+                array = list(range(0, len(channelmatrix_users)))
+                array.remove(i)
+                for j in array:
+
+                    test = np.vdot(h_inv_tra[j], channelmatrix_users[i, :])
+                    bla = h_inv_tra[j][0]*channelmatrix_users[i, :][0]+h_inv_tra[j][1]*channelmatrix_users[i, :][1]
+                    bla2 = np.conj(h_inv_tra[j][0])*channelmatrix_users[i, :][0]+np.conj(h_inv_tra[j][1])*channelmatrix_users[i, :][1]
+                    bla3 = h_inv_tra[j][0]*np.conj(channelmatrix_users[i, :][0])+h_inv_tra[j][1]*np.conj(channelmatrix_users[i, :][1])
+                    test2 = np.dot(h_inv_tra[j],channelmatrix_users[i, :] )
+                    if np.power(np.absolute(np.vdot(h_inv_tra[j], channelmatrix_users[i, :])), 2) < 10 ** -10:
+                        sum = sum + 0
+                    else:
+                        sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
+                N.append(sum)
+                sum = 0
+
+            for i in range(0, len(channelmatrix_users)):
+                SINR.append(S[i] / (1 + N[i]))
+                R.append(math.log((1 + SINR[i]), 2))
+            rates.append(R)
+            if option == 'test':
+                ues_thr = copy.deepcopy(ues_thr_optimal_global)
+                ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
+                ues_ri_ti_0 = rates[action][0] / ues_ri_ti_thr[action_to_ues_tbl[action][0]]
+                ues_ri_ti_1 = rates[action][1] / ues_ri_ti_thr[action_to_ues_tbl[action][1]]
+
+                ues_ri_ti_thr[action_to_ues_tbl[action][0]] += rates[action][0]
+                ues_ri_ti_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+
+                ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
+                ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+                sum_ri_ti = ues_ri_ti_0 + ues_ri_ti_1
+                if max_ri_ti <= sum_ri_ti:
+                    max_ri_ti_action = action
+                    max_ri_ti = sum_ri_ti
+                    tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
+                sum_log = 0
+                for i in range(0, len(ues_thr)):
+                    sum_log = sum_log + float(np.log2(ues_thr[i]))
+                if max_sum_log <= sum_log:
+                    max_action = action
+                    max_sum_log = sum_log
+                    tmp_max_ues_thr = copy.deepcopy(ues_thr)
+        #ues_thr_optimal_global = tmp_max_ues_thr
+
+
+        return  max_action, rates, tmp_max_ues_thr, tmp_max_ri_ti_thr, max_ri_ti_action
+
+
 
     def find_optimal_action(self, observation, actions_array, option):
         max_sum_log = 0

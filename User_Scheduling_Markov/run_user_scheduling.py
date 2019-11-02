@@ -41,7 +41,8 @@ def update():
         # initial observation
         #start_state = channel_chain.next_state(start_state)
         start_state = np.random.choice(states)
-        channels = env.create_channel(start_state, corr_chain.next_state(0))
+        channes_guass_corr = env.create_guass_vectors()
+        channels = env.create_channel(start_state, channes_guass_corr)
         observation = env.reset(channels)
 
 
@@ -80,9 +81,11 @@ def test_markov():
     corr_state = np.random.choice(corr)
     env.init_for_test()
     #RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state)
-    data = np.genfromtxt('Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_all_thr_200000_runs.csv', delimiter = ',')
+    data = np.genfromtxt('Log_Thr_Markov_2_tti_test_0.9_epsilon_decay_6000000_all_logthr_200000_runs.csv', delimiter = ',')
     sns.set(color_codes=True)
     sns.distplot(data, kde=False)
+    plt.xlabel("LogThr BF vs RL")
+    plt.ylabel("Number of Observations")
     plt.show()
 
     #avg_run = []
@@ -177,8 +180,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
+    update()
     #test()
-    test_markov()
+    #test_markov()
     #env.after(100, update)
     #env.mainloop()
