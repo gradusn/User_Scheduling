@@ -80,7 +80,7 @@ def test_markov():
     corr_state = np.random.choice(corr)
     env.init_for_test()
     #RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state)
-    data = np.genfromtxt('Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_all_thr_200000_runs.csv', delimiter = ',')
+    data = np.genfromtxt('Log_Thr_Markov_4_tti_test_0.9_epsilon_decay_60000000_all_thr_200000_runs.csv', delimiter = ',')
     sns.set(color_codes=True)
     sns.distplot(data, kde=False)
     plt.show()
