@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 3
+max_time_slots = 2
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -51,6 +51,8 @@ n_actions = binomial(n_UEs, 2)
 logthr_rl = []
 logthr_random = []
 logthr_optimal = []
+
+angles = []
 
 
 ues_thr_random_global = []
@@ -107,32 +109,38 @@ class UserScheduling(object):
 
     def create_guass_vectors(self):
         mean = 0
+        flag = 0
         standart_deviation = np.sqrt(0.5)
         global H
         H = []
         for i in range(0, n_UEs):
             vector = []
-            for j in range(0, n_Tx):
-                real = np.random.normal(mean, standart_deviation)
-                img = np.random.normal(mean, standart_deviation)
-                vector.append(complex(real, img))
-            vector = vector / np.sqrt(np.power(np.absolute(vector[0]),2)+np.power(np.absolute(vector[1]),2))
+            for j in range(0, n_Tx*2):
+
+                coeff = np.random.normal(mean, standart_deviation)
+                if j%2 == 0:
+                    vector.append(coeff)
+                else:
+                    vector.append(complex(0,coeff))
+
+            vector = vector / np.sqrt(np.power(np.absolute(vector[0]),2)+np.power(np.absolute(vector[1]),2)+np.power(np.absolute(vector[2]),2)+np.power(np.absolute(vector[3]),2))
             H.append(vector)
         H = np.array(H)
         bins_corr = self.find_angles()
         return bins_corr
 
     def find_angles(self):
+        global angles
         angles = []
         for i in range(0, len(action_to_ues_tbl)):
             UE_1 = action_to_ues_tbl[i][0]
             UE_2 = action_to_ues_tbl[i][1]
             channelmatrix_users = H[[UE_1, UE_2], :]
-            dot_product = np.vdot(channelmatrix_users[1], channelmatrix_users[0])
+            dot_product = np.vdot(channelmatrix_users[0],channelmatrix_users[1])
             #test_dot = np.dot(channelmatrix_users[1], channelmatrix_users[0])
             real = dot_product.real
-            norm_v1 = np.sqrt(np.power(np.absolute(channelmatrix_users[0][0]), 2)+np.power(np.absolute(channelmatrix_users[0][1]), 2))
-            norm_v2 = np.sqrt(np.power(np.absolute(channelmatrix_users[1][0]), 2)+np.power(np.absolute(channelmatrix_users[1][1]), 2))
+            norm_v1 = np.sqrt(np.power(np.absolute(channelmatrix_users[0][0]), 2)+np.power(np.absolute(channelmatrix_users[0][1]), 2)+np.power(np.absolute(channelmatrix_users[0][2]), 2)+np.power(np.absolute(channelmatrix_users[0][3]), 2))
+            norm_v2 = np.sqrt(np.power(np.absolute(channelmatrix_users[1][0]), 2)+np.power(np.absolute(channelmatrix_users[1][1]), 2)+np.power(np.absolute(channelmatrix_users[1][2]), 2)+np.power(np.absolute(channelmatrix_users[1][3]), 2))
 
             angle = np.arccos(real / (norm_v1*norm_v2))
             angles.append(np.degrees(angle))
@@ -229,9 +237,9 @@ class UserScheduling(object):
             done = False
             #ues_thr_optimal_global = tmp_thr_optimal
         next_channel_state = channel_chain.next_state(state)
-        channels = self.create_channel(next_channel_state, corr_chain.next_state(0))
+        channes_guass_corr = self.create_guass_vectors()
+        channels = self.create_channel(next_channel_state, channes_guass_corr)
         s_ = np.array([ues_thr_rl, channels], dtype=object)
-        #s_ = np.array([ues_thr_rl, 'B B G_GB'], dtype=object)
 
         return s_, reward, next_channel_state,  done
 
@@ -273,28 +281,83 @@ class UserScheduling(object):
             h_inv_tra = np.transpose(h_inv)
             # Normalizing the inverse channel matrix
 
-            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.power(np.absolute(h_inv_tra[0][0]),2)+np.power(np.absolute(h_inv_tra[0][1]),2))
-            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.power(np.absolute(h_inv_tra[1][0]),2)+np.power(np.absolute(h_inv_tra[1][1]),2))
+            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.power(np.absolute(h_inv_tra[0][0]),2)+np.power(np.absolute(h_inv_tra[0][1]),2)+np.power(np.absolute(h_inv_tra[0][2]),2)+np.power(np.absolute(h_inv_tra[0][3]),2))
+            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.power(np.absolute(h_inv_tra[1][0]),2)+np.power(np.absolute(h_inv_tra[1][1]),2)+np.power(np.absolute(h_inv_tra[1][2]),2)+np.power(np.absolute(h_inv_tra[1][3]),2))
             S = []
             N = []
             sum = 0
             SINR = []
             R = []
 
+            #v1 = []
+
+            #t = complex(1,1)
+            #t2 = complex(-1,0)
+            #v1 = [t, t2]
+            #v3 = [t.real,complex(0,t.imag),t2.real,complex(0,t2.imag)]
+            #v1 = v1 / np.sqrt(np.power(np.absolute(v1[0]),2)+np.power(np.absolute(v1[1]),2))
+            #v3 = v3 / np.sqrt(np.power(np.absolute(v3[0]),2)+np.power(np.absolute(v3[1]),2)+np.power(np.absolute(v3[2]),2)+np.power(np.absolute(v3[3]),2))
+
+            #print(v3)
+
+            #norm = np.sqrt(np.vdot(v1[0],v1[0])+np.vdot(v1[1],v1[1]))
+            #norm2 = np.sqrt(np.vdot(v3[0],v3[0])+np.vdot(v3[1],v3[1])+np.vdot(v3[2],v3[2])+np.vdot(v3[3],v3[3]))
+
+
+            #c1 = complex(1,1)
+            #c2 = complex(1.9,0)
+            #v2 = [c1, c2]
+            #v4 = [c1.real,complex(0,c1.imag),c2.real,complex(0,c2.imag)]
+            #v4 = v4 / np.sqrt(np.power(np.absolute(v4[0]),2)+np.power(np.absolute(v4[1]),2)+np.power(np.absolute(v4[2]),2)+np.power(np.absolute(v4[3]),2))
+
+            #v2 = v2 / np.sqrt(np.power(np.absolute(v2[0]),2)+np.power(np.absolute(v2[1]),2))
+
+
+            #channel = [v3, v4]
+            #test2 = np.linalg.pinv(channel)
+            #test2 = np.transpose(test2)
+
+            #test2[0] = test2[0] / np.sqrt(np.power(np.absolute(test2[0][0]), 2) + np.power(np.absolute(test2[0][1]), 2)+np.power(np.absolute(test2[0][2]), 2)+np.power(np.absolute(test2[0][3]), 2))
+            #test2[1] = test2[1] / np.sqrt(np.power(np.absolute(test2[1][0]), 2) + np.power(np.absolute(test2[1][1]), 2)+np.power(np.absolute(test2[1][2]), 2)+np.power(np.absolute(test2[1][3]), 2))
+
+            #bla2 = np.vdot(channel[0], test2[0])
+            #bla3 = np.dot(channel[1], test2[1])
+
+
+            #bla6 = np.dot(channel[0], test2[1])
+            #bla7 = np.dot(channel[1], test2[0])
+
+            #dot_product = np.vdot(channel[0], channel[1])
+
+            #real = dot_product.real
+            #abs = np.absolute(dot_product)
+            #norm_v1 = np.sqrt(np.power(np.absolute(channel[0][0]), 2)+np.power(np.absolute(channel[0][1]), 2)+np.power(np.absolute(channel[0][2]), 2)+np.power(np.absolute(channel[0][3]), 2))
+            #norm_v2 = np.sqrt(np.power(np.absolute(channel[1][0]), 2)+np.power(np.absolute(channel[1][1]), 2)+np.power(np.absolute(channel[1][2]), 2)+np.power(np.absolute(channel[1][3]), 2))
+
+            #angle = np.arccos(real / (norm_v1*norm_v2))
+            #angle = np.degrees(angle)
+
+            #angle_abs = np.arccos(abs / (norm_v1*norm_v2))
+            #angle_abs = np.degrees(angle_abs)
+
+            #norm = np.sqrt(np.vdot(channelmatrix_users[0][0],channelmatrix_users[0][0])+np.vdot(channelmatrix_users[0][1],channelmatrix_users[0][1]))
+            #norm = np.sqrt(np.vdot(h_inv_tra[0][0],h_inv_tra[0][0])+np.vdot(h_inv_tra[0][1],h_inv_tra[0][1]))
+
+
+
             for i in range(0, len(channelmatrix_users)):
-                #channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
-                S.append(np.power(np.absolute(np.vdot(h_inv_tra[i], channelmatrix_users[i, :])),2))
+                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
+                S.append(np.dot(h_inv_tra[i], channelmatrix_users[i, :]).real)
             for i in range(0, len(channelmatrix_users)):
                 array = list(range(0, len(channelmatrix_users)))
                 array.remove(i)
                 for j in array:
-
-                    test = np.vdot(h_inv_tra[j], channelmatrix_users[i, :])
-                    bla = h_inv_tra[j][0]*channelmatrix_users[i, :][0]+h_inv_tra[j][1]*channelmatrix_users[i, :][1]
-                    bla2 = np.conj(h_inv_tra[j][0])*channelmatrix_users[i, :][0]+np.conj(h_inv_tra[j][1])*channelmatrix_users[i, :][1]
-                    bla3 = h_inv_tra[j][0]*np.conj(channelmatrix_users[i, :][0])+h_inv_tra[j][1]*np.conj(channelmatrix_users[i, :][1])
-                    test2 = np.dot(h_inv_tra[j],channelmatrix_users[i, :] )
-                    if np.power(np.absolute(np.vdot(h_inv_tra[j], channelmatrix_users[i, :])), 2) < 10 ** -10:
+                    #test = np.vdot(h_inv_tra[j], channelmatrix_users[i, :])
+                    #bla = h_inv_tra[j][0]*channelmatrix_users[i, :][0]+h_inv_tra[j][1]*channelmatrix_users[i, :][1]
+                    #bla2 = np.conj(h_inv_tra[j][0])*channelmatrix_users[i, :][0]+np.conj(h_inv_tra[j][1])*channelmatrix_users[i, :][1]
+                    #bla3 = h_inv_tra[j][0]*np.conj(channelmatrix_users[i, :][0])+h_inv_tra[j][1]*np.conj(channelmatrix_users[i, :][1])
+                    #test2 = np.dot(h_inv_tra[j],channelmatrix_users[i, :] )
+                    if np.power(np.absolute(np.dot(h_inv_tra[j], channelmatrix_users[i, :])), 2) < 10 ** -10:
                         sum = sum + 0
                     else:
                         sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
@@ -331,7 +394,7 @@ class UserScheduling(object):
         #ues_thr_optimal_global = tmp_max_ues_thr
 
 
-        return  max_action, rates, tmp_max_ues_thr, tmp_max_ri_ti_thr, max_ri_ti_action
+        return  max_action, rates, tmp_max_ues_thr
 
 
 

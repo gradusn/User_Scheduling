@@ -23,13 +23,13 @@ max_testing_episodes = 200000
 
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.8, reward_decay=1, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
-                 epsilon_decay=0.001):
+    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.1, max_epsilon=1.0, min_epsilon=0.01,
+                 epsilon_decay=0.000001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
         self.gamma = reward_decay
-        self.epsilon = e_greedy
+        self.epsilon = max_epsilon
         self.minimum_epsilon = min_epsilon
         self.maximum_epsilon = max_epsilon
         self.epsilon_decay = epsilon_decay
@@ -188,12 +188,12 @@ class QLearningTable:
 
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
         if timer_tti == User_scheduling_env.max_time_slots:
-            #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
-                #-self.epsilon_decay * episode)
-            #print(self.epsilon)
+            self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
+                -self.epsilon_decay * episode)
+            print(self.epsilon)
             print(episode)
             if episode == max_episodes-1:
-                self.q_table.to_pickle("q_learning_table_Markov_0.9_gamma_1_epsilon_0.2_2_tti_6000000.pkl")
+                self.q_table.to_pickle("q_learning_table_with_guassian_channels_2_tti_20000000.pkl")
 
 
 
