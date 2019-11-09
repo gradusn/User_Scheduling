@@ -69,16 +69,27 @@ best_action = 0
 old_optimal_action = []
 old_action = []
 
+modevalue0 = 0
+modevalue1 = 0
+modevalue2 = 0
+gains = []
+
 
 class UserScheduling(object):
-    def __init__(self):
+    def __init__(self, value0, value1, value2, gains_dict):
         super(UserScheduling, self).__init__()
-        #self.file_rl = open("rl.txt", "w")
-        #self.file_random = open("random.txt", "w")
 
+        global modevalue0
+        global modevalue1
+        global modevalue2
+        global gains
 
-        # self.action_space = ['u', 'd', 'l', 'r']
-        # self.n_actions = pow(2, n_UEs)
+        modevalue0 = value0
+        modevalue1 = value1
+        modevalue2 = value2
+
+        gains = gains_dict
+
         self.n_actions = n_actions
         # self.title('User_scheduling')
         # self.observations = np.ones((n_UEs,), dtype=int)
@@ -106,6 +117,30 @@ class UserScheduling(object):
         ues_thr_random_global = np.ones((n_UEs,), dtype=float)
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
         ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
+
+
+    def create_rayleigh_fading(self):
+
+        global scalar_gain_array
+        gain_channel = ""
+        ray_0 = np.random.rayleigh(modevalue0, 1)
+        ray_1 = np.random.rayleigh(modevalue1, 1)
+        ray_2 = np.random.rayleigh(modevalue2, 1)
+        scalar_gain_array = [ray_0, ray_1, ray_2]
+
+        for i in range(0, n_UEs):
+            if scalar_gain_array[i] < gains[i]['L']:
+                gain_channel = gain_channel + 'L'
+            elif scalar_gain_array[i] < gains[i]['M']:
+                gain_channel = gain_channel + 'M'
+            else:
+                gain_channel = gain_channel + 'H'
+
+        return gain_channel
+
+
+
+
 
     def create_guass_vectors(self):
         mean = 0
@@ -236,7 +271,8 @@ class UserScheduling(object):
         else:
             done = False
             #ues_thr_optimal_global = tmp_thr_optimal
-        next_channel_state = channel_chain.next_state(state)
+        #next_channel_state = channel_chain.next_state(state)
+        next_channel_state = self.create_rayleigh_fading()
         channes_guass_corr = self.create_guass_vectors()
         channels = self.create_channel(next_channel_state, channes_guass_corr)
         s_ = np.array([ues_thr_rl, channels], dtype=object)
@@ -245,9 +281,9 @@ class UserScheduling(object):
 
     def get_rates(self, observation, action_rl, option):
         global scalar_gain_array
-        scalar_gain_array = []
+        #scalar_gain_array = []
         #self.create_guass_vectors()
-        self.gains(observation)
+        #self.gains(observation)
         #self.mapstatetovectors(observation)
         global gain
         actions = np.arange(n_UEs)

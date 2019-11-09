@@ -20,6 +20,7 @@ import csv
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import hist
 
 option = 'train'
 state_action = []
@@ -40,7 +41,8 @@ def update():
         timer_tti = 0
         # initial observation
         #start_state = channel_chain.next_state(start_state)
-        start_state = np.random.choice(states)
+        #start_state = np.random.choice(states)
+        start_state = env.create_rayleigh_fading()
         channes_guass_corr = env.create_guass_vectors()
         channels = env.create_channel(start_state, channes_guass_corr)
         observation = env.reset(channels)
@@ -178,8 +180,27 @@ if __name__ == "__main__":
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
                                 states=states)
 
-    env = UserScheduling()
+
+
+    meanvalue = 3
+    modevalue = np.sqrt(2 / np.pi) * meanvalue
+
+    meanvalue1 = 2
+    modevalue1 = np.sqrt(2 / np.pi) * meanvalue1
+
+    meanvalue2 = 1
+    modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
+    (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=4)
+    (n1, bins1, patches1) = hist(np.random.rayleigh(modevalue1, 50000000), bins=4)
+    (n2, bins2, patches2) = hist(np.random.rayleigh(modevalue2, 50000000), bins=4)
+
+    bins = [bins0, bins1, bins2]
+
+    gains_dict = [{'L': bins[0][1], 'M': bins[0][2], 'H': bins[0][3]}, {'L': bins[1][1], 'M': bins[1][2], 'H': bins[1][3]}, {'L': bins[2][1], 'M': bins[2][2], 'H': bins[2][3]}]
+
+    env = UserScheduling(modevalue, modevalue1, modevalue2, gains_dict)
     RL = QLearningTable(actions=list(range(env.n_actions)))
+
     update()
     #test()
     #test_markov()
