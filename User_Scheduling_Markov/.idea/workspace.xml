@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="777aaf07-62f9-4e9b-a3ab-bdce0c5357c5" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/brain_DQN.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/enviroment_DQN.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run_DQN.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/User_scheduling_env.py" beforeDir="false" afterPath="$PROJECT_DIR$/User_scheduling_env.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_user_scheduling.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_user_scheduling.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -41,7 +42,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.run_user_scheduling">
+  <component name="RunManager" selected="Python.run_DQN">
     <configuration name="Init_Markov" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="User_Scheduling_Markov" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -55,6 +56,27 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Init_Markov.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="run_DQN" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="User_Scheduling_Markov" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_DQN.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -86,6 +108,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.run_DQN" />
         <item itemvalue="Python.run_user_scheduling" />
         <item itemvalue="Python.Init_Markov" />
       </list>
@@ -154,6 +177,21 @@
           <url>file://$PROJECT_DIR$/User_scheduling_env.py</url>
           <line>274</line>
           <option name="timeStamp" value="204" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/run_DQN.py</url>
+          <line>40</line>
+          <option name="timeStamp" value="206" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/run_DQN.py</url>
+          <line>8</line>
+          <option name="timeStamp" value="210" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/run_DQN.py</url>
+          <line>23</line>
+          <option name="timeStamp" value="214" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
