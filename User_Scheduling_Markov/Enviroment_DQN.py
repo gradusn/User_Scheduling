@@ -45,6 +45,8 @@ n_actions = binomial(n_UEs, 2)
 corr_array = []
 
 ues_thr_optimal_global = []
+diff = []
+
 
 class UserScheduling(object):
     def __init__(self):
@@ -69,8 +71,7 @@ class UserScheduling(object):
         #return (np.array(self.canvas.coords(self.rect)[:2]) - np.array(self.canvas.coords(self.oval)[:2]))/(MAZE_H*UNIT)
 
     def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, option):
-
-        diff = []
+        global diff
         global ues_thr_optimal_global
         ues_thr_rl = copy.deepcopy(observation[:3])
 

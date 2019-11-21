@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow.compat.v1 as tf
+import Enviroment_DQN
 tf.disable_v2_behavior()
 np.random.seed(1)
 tf.set_random_seed(1)
@@ -14,6 +15,9 @@ class DeepQNetwork:
             learning_rate=0.01,
             reward_decay=0.9,
             e_greedy=0.9,
+            minimum_epsilon=0.01,
+            max_epsilon=1.0,
+            epsilon_decay=0.000001,
             replace_target_iter=300,
             memory_size=500,
             batch_size=32,
@@ -25,11 +29,14 @@ class DeepQNetwork:
         self.lr = learning_rate
         self.gamma = reward_decay
         self.epsilon_max = e_greedy
+        self.max_epsilon = max_epsilon
+        self.epsilon_decay = epsilon_decay
+        self.minimum_epsilon = minimum_epsilon
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.epsilon = max_epsilon
 
         # total learning step
         self.learn_step_counter = 0
@@ -110,7 +117,7 @@ class DeepQNetwork:
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def learn(self):
+    def learn(self, timer_tti, episode):
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.target_replace_op)
@@ -135,7 +142,11 @@ class DeepQNetwork:
         self.cost_his.append(cost)
 
         # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        #self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        if timer_tti == Enviroment_DQN.max_time_slots:
+            self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
+                -self.epsilon_decay * episode)
+            print(self.epsilon)
         self.learn_step_counter += 1
 
     def plot_cost(self):

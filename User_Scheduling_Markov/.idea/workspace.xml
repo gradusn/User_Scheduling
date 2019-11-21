@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="777aaf07-62f9-4e9b-a3ab-bdce0c5357c5" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/DQN_brain.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Enviroment_DQN.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/run_DQN.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DQN_brain.py" beforeDir="false" afterPath="$PROJECT_DIR$/DQN_brain.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Enviroment_DQN.py" beforeDir="false" afterPath="$PROJECT_DIR$/Enviroment_DQN.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_DQN.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_DQN.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -175,18 +175,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Enviroment_DQN.py</url>
-          <line>119</line>
+          <line>120</line>
           <option name="timeStamp" value="162" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/run_DQN.py</url>
-          <line>122</line>
-          <option name="timeStamp" value="173" />
+          <url>file://$PROJECT_DIR$/Enviroment_DQN.py</url>
+          <line>73</line>
+          <option name="timeStamp" value="184" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/run_DQN.py</url>
-          <line>34</line>
-          <option name="timeStamp" value="177" />
+          <line>125</line>
+          <option name="timeStamp" value="191" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Enviroment_DQN.py</url>
+          <line>99</line>
+          <option name="timeStamp" value="192" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

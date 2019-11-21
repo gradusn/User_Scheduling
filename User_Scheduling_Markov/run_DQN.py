@@ -1,4 +1,5 @@
 from Enviroment_DQN import UserScheduling
+import Enviroment_DQN
 from DQN_brain import DeepQNetwork
 from MarkovChain import MarkovChain
 
@@ -11,14 +12,14 @@ import csv
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-max_episodes = 5000
+max_episodes = 6000000
 state_action = []
 
 alpha_GB = 0.9
 beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 option = 'train'
-start_test = 500
+start_test = 200000
 
 
 def run_DQN():
@@ -51,7 +52,7 @@ def run_DQN():
             RL.store_transition(observation, action, reward, observation_)
 
             if (step > 200) and (step % 5 == 0):
-                RL.learn()
+                RL.learn(timer_tti, episode)
 
             # swap observation
             observation = observation_
@@ -59,6 +60,7 @@ def run_DQN():
             # break while loop when end of this episode
             step += 1
             if done:
+            #print(self.epsilon)
                 break
 
 
@@ -120,4 +122,9 @@ if __name__ == "__main__":
     #env.after(100, run_maze)
     #env.mainloop()
     run_DQN()
+    with open("Log_Thr_2_tti_test_0.9_epsilon_decay_2000000_NN_SM.csv", "a") as thr:
+        thr_csv = csv.writer(thr, dialect='excel')
+        thr_csv.writerow(Enviroment_DQN.diff)
+        thr.close()
+
     RL.plot_cost()
