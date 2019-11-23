@@ -49,7 +49,7 @@ class QLearningTable:
     '''
 
     def testing_markov(self, start_state, channel_chain, corr_chain, env, corr_state):
-        q_learning_table = pd.read_pickle("q_learning_table_Markov_0.9_4_tti_60000000.pkl")
+        q_learning_table = pd.read_pickle("q_learning_table_Markov_0.9_random_after_episode_2_tti_6000000.pkl")
         diff = []
         for episode in range(0, max_testing_episodes):
             print(episode)
@@ -69,8 +69,8 @@ class QLearningTable:
                 rl_thr, actions_array = self.create_step(actions, env, s_, actions_array)
                 if (i == User_scheduling_env.max_time_slots-1):
                     log_thrs = self.get_log_thrs(rl_thr)
-                    if log_thrs[0] > log_thrs[2]:
-                        diff.append(log_thrs[0]-log_thrs[2])
+                    #if log_thrs[0] > log_thrs[2]:
+                    diff.append(log_thrs[0]-log_thrs[2])
                     #with open("Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_with_ri_ti.csv", "a") as thr:
                         #thr_csv = csv.writer(thr, dialect='excel')
                         #thr_csv.writerow(log_thrs)
@@ -83,7 +83,7 @@ class QLearningTable:
                     actions_array = []
                     start_state = channel_chain.next_state(0)
                     corr_state = corr_chain.next_state(0)
-        with open("Log_Thr_Markov_4_tti_test_0.9_epsilon_decay_60000000_all_thr_200000_runs.csv", "a") as thr:
+        with open("Log_Thr_Markov_2_tti_test_0.9_epsilon_decay_60000000_200000_runs.csv", "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
             thr_csv.writerow(diff)
             thr.close()

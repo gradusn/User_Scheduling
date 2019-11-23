@@ -6,6 +6,7 @@ The RL is in RL_brain.py.
 
 View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 """
+from matplotlib.ticker import PercentFormatter
 
 from User_scheduling_env import UserScheduling
 from Brain_user_scheduling import QLearningTable
@@ -80,10 +81,14 @@ def test_markov():
     corr_state = np.random.choice(corr)
     env.init_for_test()
     #RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state)
-    data = np.genfromtxt('Log_Thr_Markov_4_tti_test_0.9_epsilon_decay_60000000_all_thr_200000_runs.csv', delimiter = ',')
+    data = np.genfromtxt('Log_Thr_2_tti_test_0.9_epsilon_decay_6000000_NN_SM.csv', delimiter = ',')
     sns.set(color_codes=True)
     sns.distplot(data, kde=False)
+    #plt.hist(data, weights=np.ones(len(data)) / len(data))
+
+    #plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
     plt.show()
+
 
     #avg_run = []
 
