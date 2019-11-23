@@ -1,22 +1,43 @@
-from enviroment_DQN import Maze
+from enviroment_DQN import UserScheduling
 from brain_DQN import DeepQNetwork
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import hist
 
-def run_maze():
+option = 'train'
+state_action = []
+
+alpha_GB = 0.9
+beta_GB = 0.9
+property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
+corr_probability = 0.8
+
+max_episodes = 20000000
+max_runs_stats = 500
+
+def update():
     step = 0
-    for episode in range(300):
+    global state_action
+    global start_state
+    for episode in range(max_episodes):
+        timer_tti = 0
         # initial observation
-        observation = env.reset()
+        # start_state = channel_chain.next_state(start_state)
+        # start_state = np.random.choice(states)
+        start_state = env.create_rayleigh_fading()
+        channes_guass_corr = env.create_guass_vectors()
+        channels = env.create_channel(start_state, channes_guass_corr)
+        observation = env.reset(channels)
 
         while True:
-            # fresh env
-            env.render()
+            timer_tti += 1
 
             # RL choose action based on observation
             action = RL.choose_action(observation)
 
             # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action)
+            observation_, reward, done = env.step(action, observation, start_state, timer_tti, episode, option )
 
             RL.store_transition(observation, action, reward, observation_)
 
@@ -27,18 +48,18 @@ def run_maze():
             observation = observation_
 
             # break while loop when end of this episode
+            step += 1
+
             if done:
                 break
-            step += 1
 
     # end of game
     print('game over')
-    env.destroy()
 
 
 if __name__ == "__main__":
-    # maze game
-    env = Maze()
+    env = UserScheduling()
+
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
                       reward_decay=0.9,
@@ -47,6 +68,5 @@ if __name__ == "__main__":
                       memory_size=2000,
                       # output_graph=True
                       )
-    env.after(100, run_maze)
-    env.mainloop()
+
     RL.plot_cost()
