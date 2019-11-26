@@ -8,6 +8,7 @@ Tensorflow: r1.2
 
 import numpy as np
 #import tensorflow as tf
+import enviroment_DQN
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
@@ -38,12 +39,14 @@ class DeepQNetwork:
         self.n_features = n_features
         self.lr = learning_rate
         self.gamma = reward_decay
-        self.epsilon_max = e_greedy
         self.replace_target_iter = replace_target_iter
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.epsilon_increment = e_greedy_increment
-        self.epsilon = 0 if e_greedy_increment is not None else self.epsilon_max
+        self.max_epsilon = max_epsilon
+        self.epsilon = max_epsilon
+        self.minimum_epsilon = minimum_epsilon
+        self.epsilon_decay = epsilon_decay
 
         # total learning step
         self.learn_step_counter = 0
@@ -116,7 +119,7 @@ class DeepQNetwork:
         # to have batch dimension when feed into tf placeholder
         observation = observation[np.newaxis, :]
 
-        if np.random.uniform() < self.epsilon:
+        if np.random.uniform() > self.epsilon:
             # forward feed the observation and get q value for every actions
             actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
             action = np.argmax(actions_value)
@@ -124,7 +127,7 @@ class DeepQNetwork:
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def learn(self):
+    def learn(self, timer_tti, episode):
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.target_replace_op)
@@ -149,7 +152,10 @@ class DeepQNetwork:
         self.cost_his.append(cost)
 
         # increasing epsilon
-        self.epsilon = self.epsilon + self.epsilon_increment if self.epsilon < self.epsilon_max else self.epsilon_max
+        if timer_tti == enviroment_DQN.max_time_slots:
+            self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
+                -self.epsilon_decay * episode)
+            print(self.epsilon)
         self.learn_step_counter += 1
 
     def plot_cost(self):

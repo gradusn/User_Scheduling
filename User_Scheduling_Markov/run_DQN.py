@@ -1,5 +1,10 @@
 from enviroment_DQN import UserScheduling
 from brain_DQN import DeepQNetwork
+import enviroment_DQN
+import numpy as np
+import csv
+
+
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -13,14 +18,17 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 20000000
-max_runs_stats = 500
+max_episodes = 60000000
+start_test = 200000
 
 def update():
+    global option
     step = 0
     global state_action
     global start_state
     for episode in range(max_episodes):
+        print(episode)
+
         timer_tti = 0
         # initial observation
         # start_state = channel_chain.next_state(start_state)
@@ -29,6 +37,8 @@ def update():
         channes_guass_corr = env.create_guass_vectors()
         channels = env.create_channel(start_state, channes_guass_corr)
         observation = env.reset(channels)
+        if episode > max_episodes - start_test:
+            option = 'test'
 
         while True:
             timer_tti += 1
@@ -42,7 +52,7 @@ def update():
             RL.store_transition(observation, action, reward, observation_)
 
             if (step > 200) and (step % 5 == 0):
-                RL.learn()
+                RL.learn(timer_tti, episode)
 
             # swap observation
             observation = observation_
@@ -58,7 +68,15 @@ def update():
 
 
 if __name__ == "__main__":
-    env = UserScheduling()
+    meanvalue = 3
+    modevalue = np.sqrt(2 / np.pi) * meanvalue
+
+    meanvalue1 = 2
+    modevalue1 = np.sqrt(2 / np.pi) * meanvalue1
+
+    meanvalue2 = 1
+    modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
+    env = UserScheduling(modevalue, modevalue1, modevalue2)
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
@@ -68,5 +86,10 @@ if __name__ == "__main__":
                       memory_size=2000,
                       # output_graph=True
                       )
+    update()
 
-    RL.plot_cost()
+    with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_GM.csv", "a") as thr:
+        thr_csv = csv.writer(thr, dialect='excel')
+        thr_csv.writerow(enviroment_DQN.diff)
+        thr.close()
+    #RL.plot_cost()

@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="777aaf07-62f9-4e9b-a3ab-bdce0c5357c5" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/brain_DQN.py" beforeDir="false" afterPath="$PROJECT_DIR$/brain_DQN.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/enviroment_DQN.py" beforeDir="false" afterPath="$PROJECT_DIR$/enviroment_DQN.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run_DQN.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_DQN.py" afterDir="false" />
@@ -179,13 +180,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/run_DQN.py</url>
-          <line>30</line>
-          <option name="timeStamp" value="210" />
+          <line>40</line>
+          <option name="timeStamp" value="228" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/run_DQN.py</url>
-          <line>44</line>
-          <option name="timeStamp" value="214" />
+          <url>file://$PROJECT_DIR$/enviroment_DQN.py</url>
+          <line>178</line>
+          <option name="timeStamp" value="233" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

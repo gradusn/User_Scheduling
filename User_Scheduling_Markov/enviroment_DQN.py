@@ -26,6 +26,7 @@ import math
 modevalue0 = 0
 modevalue1 = 0
 modevalue2 = 0
+
 max_time_slots = 2
 channelmatrix = [[]]
 n_UEs = 3
@@ -38,35 +39,30 @@ corr_array = []
 
 ues_thr_optimal_global = []
 diff = []
+gains = []
+n_Tx = 2
 
-
-
-UNIT = 40   # pixels
-MAZE_H = 4  # grid height
-MAZE_W = 4  # grid width
 
 
 class UserScheduling(object):
-    def __init__(self, value0, value1, value2, gains_dict):
+    def __init__(self, value0, value1, value2):
         super(UserScheduling, self).__init__()
         global modevalue0
         global modevalue1
         global modevalue2
-        global gains
         modevalue0 = value0
         modevalue1 = value1
         modevalue2 = value2
-        gains = gains_dict
         self.n_actions = n_actions
         self.n_features = n_UEs * 3
 
 
     def create_channel(self, channels_gain, channels_corr):
-        return str(channels_gain)+str("_")+str(channels_corr)
+        return np.concatenate((np.asarray(channels_gain), np.asarray(channels_corr)), axis=None)
 
     def reset(self, channel_state):
         array = np.ones((n_UEs,), dtype=float)
-        observations = np.array([array, channel_state], dtype=object)
+        observations = np.concatenate((array, channel_state), axis= None)
         global ues_thr_random_global
         global ues_thr_optimal_global
         global ues_thr_ri_ti_global
@@ -86,21 +82,12 @@ class UserScheduling(object):
     def create_rayleigh_fading(self):
 
         global scalar_gain_array
-        gain_channel = ""
         ray_0 = np.random.rayleigh(modevalue0, 1)
         ray_1 = np.random.rayleigh(modevalue1, 1)
         ray_2 = np.random.rayleigh(modevalue2, 1)
         scalar_gain_array = [ray_0, ray_1, ray_2]
 
-        for i in range(0, n_UEs):
-            if scalar_gain_array[i] < gains[i]['L']:
-                gain_channel = gain_channel + 'L'
-            elif scalar_gain_array[i] < gains[i]['M']:
-                gain_channel = gain_channel + 'M'
-            else:
-                gain_channel = gain_channel + 'H'
-
-        return gain_channel
+        return np.asarray(scalar_gain_array).flatten()
 
     def create_guass_vectors(self):
         mean = 0
@@ -116,13 +103,14 @@ class UserScheduling(object):
                 if j%2 == 0:
                     vector.append(coeff)
                 else:
-                    vector.append(complex(0,coeff))
+                    vector.append(complex(0, coeff))
 
             vector = vector / np.sqrt(np.power(np.absolute(vector[0]),2)+np.power(np.absolute(vector[1]),2)+np.power(np.absolute(vector[2]),2)+np.power(np.absolute(vector[3]),2))
             H.append(vector)
         H = np.array(H)
-        bins_corr = self.find_angles()
-        return bins_corr
+        self.find_angles()
+        return angles
+
     def find_angles(self):
         global angles
         angles = []
@@ -139,10 +127,7 @@ class UserScheduling(object):
             angle = np.arccos(real / (norm_v1*norm_v2))
             angles.append(np.degrees(angle))
         angles = np.array(angles)
-        cut_labels_6 = ['1', '2', '3', '4','5','6']
-        cut_bins = [0, 30, 60, 90, 120, 150, 180]
-        binned = pd.cut(angles, bins=cut_bins, labels=cut_labels_6)
-        return str(binned[0]+binned[1]+binned[2])
+
 
     def gains(self, state):
         state = state[1]
@@ -158,14 +143,18 @@ class UserScheduling(object):
         global old_optimal_action
         check = []
 
-        s_ = copy.deepcopy(observation)
-        R, tmp_thr_optimal, optimal_action = self.get_rates(observation, action, option)
+        #s_ = copy.deepcopy(observation)
+        R, optimal_action, tmp_thr_optimal  = self.get_rates(observation, action, option)
         # old_optimal_action.append(optimal_action)
         # old_action.append(action)
 
-        ues_thr_rl = copy.deepcopy(s_[0])
+        #ues_thr_rl = copy.deepcopy(s_[0])
+        ues_thr_rl = copy.deepcopy(observation[:3])
 
-        thr_rl = R[0]
+        if option == 'test':
+            thr_rl = R[action]
+        else:
+            thr_rl = R[0]
 
         ues_thr_rl[action_to_ues_tbl[action][0]] += thr_rl[0]
         ues_thr_rl[action_to_ues_tbl[action][1]] += thr_rl[1]
@@ -177,17 +166,24 @@ class UserScheduling(object):
 
         if timer_tti == max_time_slots:
             done = True
+            if option == 'test':
+                reward_optimal = 0
+                for i in range(0, len(tmp_thr_optimal)):
+                    reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
+
+                diff.append(reward - reward_optimal)
 
         else:
             done = False
             # ues_thr_optimal_global = tmp_thr_optimal
+        ues_thr_optimal_global = tmp_thr_optimal
         # next_channel_state = channel_chain.next_state(state)
         next_channel_state = self.create_rayleigh_fading()
         channes_guass_corr = self.create_guass_vectors()
         channels = self.create_channel(next_channel_state, channes_guass_corr)
-        s_ = np.array([ues_thr_rl, channels], dtype=object)
+        s_ = np.concatenate((ues_thr_rl, channels), axis=None)
 
-        return s_, reward, next_channel_state, done
+        return s_, reward, done
 
     def get_rates(self, observation, action_rl, option):
         global scalar_gain_array
@@ -199,8 +195,8 @@ class UserScheduling(object):
             optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
             return rates_per_algo, tmp_thr_optimal, optimal_action
         else:
-            optimal_action, rates_per_algo, tmp_thr_optimal, tmp_thr_ri_ti, action_ri_ti = self.find_optimal_action(observation, actions, option)
-            return optimal_action, rates_per_algo, tmp_thr_optimal, tmp_thr_ri_ti, action_ri_ti
+            optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
+            return rates_per_algo, optimal_action, tmp_thr_optimal
 
     def find_action(self, observation, actions_array, option):
         max_sum_log = 0
@@ -253,20 +249,20 @@ class UserScheduling(object):
             rates.append(R)
             if option == 'test':
                 ues_thr = copy.deepcopy(ues_thr_optimal_global)
-                ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
-                ues_ri_ti_0 = rates[action][0] / ues_ri_ti_thr[action_to_ues_tbl[action][0]]
-                ues_ri_ti_1 = rates[action][1] / ues_ri_ti_thr[action_to_ues_tbl[action][1]]
+                #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
+                #ues_ri_ti_0 = rates[action][0] / ues_ri_ti_thr[action_to_ues_tbl[action][0]]
+                #ues_ri_ti_1 = rates[action][1] / ues_ri_ti_thr[action_to_ues_tbl[action][1]]
 
-                ues_ri_ti_thr[action_to_ues_tbl[action][0]] += rates[action][0]
-                ues_ri_ti_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+                #ues_ri_ti_thr[action_to_ues_tbl[action][0]] += rates[action][0]
+                #ues_ri_ti_thr[action_to_ues_tbl[action][1]] += rates[action][1]
 
                 ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
                 ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
-                sum_ri_ti = ues_ri_ti_0 + ues_ri_ti_1
-                if max_ri_ti <= sum_ri_ti:
-                    max_ri_ti_action = action
-                    max_ri_ti = sum_ri_ti
-                    tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
+                #sum_ri_ti = ues_ri_ti_0 + ues_ri_ti_1
+                #if max_ri_ti <= sum_ri_ti:
+                    #max_ri_ti_action = action
+                    #max_ri_ti = sum_ri_ti
+                    #tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
                 sum_log = 0
                 for i in range(0, len(ues_thr)):
                     sum_log = sum_log + float(np.log2(ues_thr[i]))
