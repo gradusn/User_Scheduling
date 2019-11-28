@@ -19,7 +19,7 @@ property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_G
 corr_probability = 0.8
 
 max_episodes = 60000000
-start_test = 200000
+start_test = 500000
 
 def update():
     global option
@@ -34,9 +34,10 @@ def update():
         # start_state = channel_chain.next_state(start_state)
         # start_state = np.random.choice(states)
         start_state = env.create_rayleigh_fading()
-        channes_guass_corr = env.create_guass_vectors()
-        channels = env.create_channel(start_state, channes_guass_corr)
-        observation = env.reset(channels)
+        #channes_guass_corr = env.create_guass_vectors()
+        #channels = env.create_channel(start_state, channes_guass_corr)
+        #observation = env.reset(channels)
+        observation = env.reset(start_state)
         if episode > max_episodes - start_test:
             option = 'test'
 
@@ -66,6 +67,15 @@ def update():
     # end of game
     print('game over')
 
+def plot():
+    data = np.genfromtxt('Log_Thr_2_tti_test_0.9_epsilon_decay_10000000_NN_SM.csv',
+                         delimiter=',')
+    sns.set(color_codes=True)
+    sns.distplot(data, kde=False)
+    plt.xlabel("LogThr BF vs RL")
+    plt.ylabel("Number of Observations")
+    plt.show()
+
 
 if __name__ == "__main__":
     meanvalue = 3
@@ -76,7 +86,14 @@ if __name__ == "__main__":
 
     meanvalue2 = 1
     modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
-    env = UserScheduling(modevalue, modevalue1, modevalue2)
+
+    (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=17)
+    (n1, bins1, patches1) = hist(np.random.rayleigh(modevalue1, 50000000), bins=17)
+    (n2, bins2, patches2) = hist(np.random.rayleigh(modevalue2, 50000000), bins=17)
+
+    #bins = [bins0, bins1, bins2]
+
+    env = UserScheduling(modevalue, modevalue1, modevalue2, bins0)
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
@@ -86,10 +103,12 @@ if __name__ == "__main__":
                       memory_size=2000,
                       # output_graph=True
                       )
+    #plot()
     update()
-
-    with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_GM.csv", "a") as thr:
+    with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         thr_csv = csv.writer(thr, dialect='excel')
         thr_csv.writerow(enviroment_DQN.diff)
         thr.close()
+
+
     #RL.plot_cost()

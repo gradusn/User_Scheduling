@@ -34,6 +34,8 @@ comb = combinations(np.arange(n_UEs), 2)
 action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 scalar_gain_array = []
 
+cqi = []
+
 n_actions = binomial(n_UEs, 2)
 corr_array = []
 
@@ -42,19 +44,38 @@ diff = []
 gains = []
 n_Tx = 2
 
+Max_Cqi = 16
+Ues_Cqi = []
+
+SpectralEfficiencyForCqi= [0.0, 0.15, 0.23, 0.38, 0.6, 0.88, 1.18, 1.48, 1.91, 2.41, 2.73, 3.32, 3.9, 4.52, 5.12, 5.55]
+
+SpectralEfficiencyForMcs = [0.15, 0.19, 0.23, 0.31, 0.38, 0.49, 0.6, 0.74, 0.88, 1.03, 1.18,
+  1.33, 1.48, 1.7, 1.91, 2.16, 2.41, 2.57,
+  2.73, 3.03, 3.32, 3.61, 3.9, 4.21, 4.52, 4.82, 5.12, 5.33, 5.55,
+  0, 0, 0]
+
+
+McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
+  19, 20, 21, 22, 23, 24, 25, 26]
+
+TransportBlockSizeTable  =  [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176, 208, 224, 256, 280, 328, 336, 376, 408, 440, 488, 520, 552, 584, 616, 712]
 
 
 class UserScheduling(object):
-    def __init__(self, value0, value1, value2):
+    def __init__(self, value0, value1, value2, bins):
         super(UserScheduling, self).__init__()
         global modevalue0
         global modevalue1
         global modevalue2
+        global cqi
         modevalue0 = value0
         modevalue1 = value1
         modevalue2 = value2
+
+        cqi = bins
         self.n_actions = n_actions
-        self.n_features = n_UEs * 3
+        #self.n_features = n_UEs * 3
+        self.n_features = n_UEs * 2
 
 
     def create_channel(self, channels_gain, channels_corr):
@@ -80,14 +101,21 @@ class UserScheduling(object):
         ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
 
     def create_rayleigh_fading(self):
-
+        global Ues_Cqi
+        Ues_Cqi = []
         global scalar_gain_array
         ray_0 = np.random.rayleigh(modevalue0, 1)
         ray_1 = np.random.rayleigh(modevalue1, 1)
         ray_2 = np.random.rayleigh(modevalue2, 1)
         scalar_gain_array = [ray_0, ray_1, ray_2]
 
-        return np.asarray(scalar_gain_array).flatten()
+        for i in range(0, n_UEs):
+            for j in range(1, Max_Cqi):
+                if scalar_gain_array[i] < cqi[j]:
+                    Ues_Cqi.append(j)
+                    break
+
+        return np.asarray(Ues_Cqi)
 
     def create_guass_vectors(self):
         mean = 0
@@ -144,7 +172,8 @@ class UserScheduling(object):
         check = []
 
         #s_ = copy.deepcopy(observation)
-        R, optimal_action, tmp_thr_optimal  = self.get_rates(observation, action, option)
+        #R, optimal_action, tmp_thr_optimal  = self.get_rates(observation, action, option)
+        R, tmp_thr_optimal = self.get_rates(observation, action, option)
         # old_optimal_action.append(optimal_action)
         # old_action.append(action)
 
@@ -156,8 +185,7 @@ class UserScheduling(object):
         else:
             thr_rl = R[0]
 
-        ues_thr_rl[action_to_ues_tbl[action][0]] += thr_rl[0]
-        ues_thr_rl[action_to_ues_tbl[action][1]] += thr_rl[1]
+        ues_thr_rl[action] += thr_rl
 
         # reward function
         reward = 0
@@ -166,6 +194,7 @@ class UserScheduling(object):
 
         if timer_tti == max_time_slots:
             done = True
+
             if option == 'test':
                 reward_optimal = 0
                 for i in range(0, len(tmp_thr_optimal)):
@@ -173,15 +202,16 @@ class UserScheduling(object):
 
                 diff.append(reward - reward_optimal)
 
+
         else:
             done = False
             # ues_thr_optimal_global = tmp_thr_optimal
         ues_thr_optimal_global = tmp_thr_optimal
         # next_channel_state = channel_chain.next_state(state)
         next_channel_state = self.create_rayleigh_fading()
-        channes_guass_corr = self.create_guass_vectors()
-        channels = self.create_channel(next_channel_state, channes_guass_corr)
-        s_ = np.concatenate((ues_thr_rl, channels), axis=None)
+        #channes_guass_corr = self.create_guass_vectors()
+        #channels = self.create_channel(next_channel_state, channes_guass_corr)
+        s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
 
         return s_, reward, done
 
@@ -192,11 +222,55 @@ class UserScheduling(object):
         actions = np.arange(n_UEs)
         if option == 'train':
             actions = [action_rl]
-            optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
-            return rates_per_algo, tmp_thr_optimal, optimal_action
+            #optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
+            TbSize, tmp_thr_optimal = self.calc_ue_rate(observation, actions, option)
+            #return rates_per_algo, tmp_thr_optimal, optimal_action
+            return TbSize, tmp_thr_optimal
         else:
-            optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
-            return rates_per_algo, optimal_action, tmp_thr_optimal
+            TbSize, tmp_thr_optimal = self.calc_ue_rate(observation, actions, option)
+            return TbSize, tmp_thr_optimal
+
+            #optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
+            #return rates_per_algo, optimal_action, tmp_thr_optimal
+
+
+    def calc_ue_rate(self, observation, actions_array, option):
+        max_sum_log = 0
+        rates = []
+        global ues_thr_optimal_global
+        tmp_max_ues_thr = []
+        max_action = 0
+        for action in actions_array:
+            UE_1 = action
+            MCS = self.getMcsFromCqi(Ues_Cqi[UE_1])
+            iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[iTbs])
+            if option == 'test':
+                ues_thr = copy.deepcopy(ues_thr_optimal_global)
+                ues_thr[action] += rates[action]
+                sum_log = 0
+                for i in range(0, len(ues_thr)):
+                    sum_log = sum_log + float(np.log2(ues_thr[i]))
+                if max_sum_log <= sum_log:
+                    max_action = action
+                    max_sum_log = sum_log
+                    tmp_max_ues_thr = copy.deepcopy(ues_thr)
+
+
+        return rates, tmp_max_ues_thr
+
+
+
+
+    def getMcsFromCqi(self, ue_cqi):
+        spectralEfficiency = SpectralEfficiencyForCqi[ue_cqi]
+        mcs = 0
+        while mcs < 28 and (SpectralEfficiencyForMcs[mcs + 1] <= spectralEfficiency):
+            mcs = mcs + 1
+
+        return mcs
+
+
 
     def find_action(self, observation, actions_array, option):
         max_sum_log = 0
