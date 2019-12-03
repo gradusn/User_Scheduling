@@ -18,54 +18,68 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 10
-start_test = 5
+max_episodes = 60000000
+max_test = 200000
 
 def update():
-    global option
     step = 0
     global state_action
     global start_state
+    start_state = env.create_rayleigh_fading()
+    observation = env.reset(start_state)
+
     for episode in range(max_episodes):
-        print(episode)
+        print("train " + str(episode))
 
-        timer_tti = 0
-        # initial observation
-        # start_state = channel_chain.next_state(start_state)
-        # start_state = np.random.choice(states)
-        start_state = env.create_rayleigh_fading()
-        #channes_guass_corr = env.create_guass_vectors()
-        #channels = env.create_channel(start_state, channes_guass_corr)
-        #observation = env.reset(channels)
-        observation = env.reset(start_state)
-        if episode > max_episodes - start_test:
-            option = 'test'
+        # RL choose action based on observation
+        action = RL.choose_action(observation)
 
-        while True:
-            timer_tti += 1
+        # RL take action and get next observation and reward
+        observation_, reward = env.step(action, observation, start_state, episode)
 
-            # RL choose action based on observation
-            action = RL.choose_action(observation)
+        RL.store_transition(observation, action, reward, observation_)
 
-            # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action, observation, start_state, timer_tti, episode, option )
+        if (step > 200) and (step % 5 == 0):
+             RL.learn(episode)
 
-            RL.store_transition(observation, action, reward, observation_)
+        # swap observation
+        observation = observation_
 
-            if (step > 200) and (step % 5 == 0):
-                RL.learn(timer_tti, episode)
-
-            # swap observation
-            observation = observation_
-
-            # break while loop when end of this episode
-            step += 1
-
-            if done:
-                break
+        # break while loop when end of this episode
+        step += 1
 
     # end of game
-    print('game over')
+    print('training over')
+
+def test():
+    global state_action
+    global start_state
+    start_state = env.create_rayleigh_fading()
+    observation = env.reset(start_state)
+    timer_tti = 0
+
+    for episode in range(max_test):
+        print("test " + str(episode))
+
+        # RL choose action based on observation
+        action = RL.choose_action_test(observation)
+
+        # RL take action and get next observation and reward
+        observation_ = env.step_test(action, observation, start_state, episode, timer_tti)
+
+        # swap observation
+        observation = observation_
+
+        timer_tti += 1
+        timer_tti = timer_tti % 10
+
+    print('testing over')
+    with open("Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_ri/ti.csv", "a") as thr:
+        thr_csv = csv.writer(thr, dialect='excel')
+        thr_csv.writerow(enviroment_DQN.diff)
+        thr.close()
+
+
 
 def plot():
     data = np.genfromtxt('Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_GM.csv',
@@ -107,6 +121,7 @@ if __name__ == "__main__":
                       )
 
     update()
+    test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

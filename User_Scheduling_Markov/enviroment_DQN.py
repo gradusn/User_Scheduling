@@ -27,7 +27,6 @@ modevalue0 = 0
 modevalue1 = 0
 modevalue2 = 0
 
-max_time_slots = 2
 channelmatrix = [[]]
 n_UEs = 3
 comb = combinations(np.arange(n_UEs), 2)
@@ -92,6 +91,11 @@ class UserScheduling(object):
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
         ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
         return observations
+
+    def concatenate(self, channel_state, array):
+        observations = np.concatenate((array, channel_state), axis=None)
+        return observations
+
 
     def init_for_test(self):
         global ues_thr_random_global
@@ -166,65 +170,72 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, state, timer_tti, episode, option):
+    def step(self, action, observation, state, episode):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
         global ues_thr_ri_ti_global
         global old_action
         global old_optimal_action
+        global time_window
 
-        check = []
-
-        #s_ = copy.deepcopy(observation)
-        #R, optimal_action, tmp_thr_optimal  = self.get_rates(observation, action, option)
-        R, tmp_thr_optimal = self.get_rates(observation, action, option)
-        # old_optimal_action.append(optimal_action)
-        # old_action.append(action)
-
-        #ues_thr_rl = copy.deepcopy(s_[0])
+        R, tmp_thr_optimal = self.get_rates(observation, action, 'train')
         ues_thr_rl = copy.deepcopy(observation[:3])
 
-        if option == 'test':
-            thr_rl = R[action]
-        else:
-            thr_rl = R[0]
+        thr_rl = R[0]
 
         array = list(np.arange(n_UEs))
         array.remove(action)
         ues_thr_rl[array] = (1 - (1 / time_window)) * ues_thr_rl[array]
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1/time_window)*thr_rl
 
-        #ues_thr_rl[action] += thr_rl
 
         # reward function
         reward = 0
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-        if timer_tti == max_time_slots:
-            done = True
-
-            if option == 'test':
-                reward_optimal = 0
-                for i in range(0, len(tmp_thr_optimal)):
-                    reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
-
-                diff.append(reward - reward_optimal)
-
-
-        else:
-            done = False
-            # ues_thr_optimal_global = tmp_thr_optimal
-        #ues_thr_optimal_global = tmp_thr_optimal
-        ues_thr_ri_ti_global = tmp_thr_optimal
         # next_channel_state = channel_chain.next_state(state)
         next_channel_state = self.create_rayleigh_fading()
-        #channes_guass_corr = self.create_guass_vectors()
-        #channels = self.create_channel(next_channel_state, channes_guass_corr)
         s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
 
-        return s_, reward, done
+        return s_, reward
+
+    def step_test(self, action, observation, start_state, episode, timer_tti):
+        global ues_thr_random_global
+        global scalar_gain_array
+        global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
+        global old_action
+        global old_optimal_action
+        global time_window
+
+        R, tmp_thr_optimal = self.get_rates(observation, action, 'test')
+        ues_thr_rl = copy.deepcopy(observation[:3])
+        thr_rl = R[action]
+
+        array = list(np.arange(n_UEs))
+        array.remove(action)
+        ues_thr_rl[array] = (1 - (1 / time_window)) * ues_thr_rl[array]
+        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
+
+        ues_thr_ri_ti_global = tmp_thr_optimal
+        if timer_tti == time_window-1:
+            reward_optimal = 0
+            for i in range(0, len(tmp_thr_optimal)):
+                reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
+
+            reward = 0
+            for i in range(0, len(ues_thr_rl)):
+                reward = reward + float(np.log2(ues_thr_rl[i]))
+
+            diff.append(reward - reward_optimal)
+
+        next_channel_state = self.create_rayleigh_fading()
+        s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
+
+        return s_
+
 
     def get_rates(self, observation, action_rl, option):
         global scalar_gain_array
@@ -233,16 +244,12 @@ class UserScheduling(object):
         actions = np.arange(n_UEs)
         if option == 'train':
             actions = [action_rl]
-            #optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
             TbSize, tmp_thr_optimal = self.calc_ue_rate(observation, actions, option)
-            #return rates_per_algo, tmp_thr_optimal, optimal_action
             return TbSize, tmp_thr_optimal
         else:
             TbSize, tmp_thr_optimal = self.calc_ue_rate(observation, actions, option)
             return TbSize, tmp_thr_optimal
 
-            #optimal_action, rates_per_algo, tmp_thr_optimal = self.find_action(observation, actions, option)
-            #return rates_per_algo, optimal_action, tmp_thr_optimal
 
 
     def calc_ue_rate(self, observation, actions_array, option):
@@ -250,6 +257,7 @@ class UserScheduling(object):
         rates = []
         global ues_thr_optimal_global
         global ues_thr_ri_ti_global
+        global time_window
         tmp_max_ues_thr = []
         max_action = 0
         max_ri_ti = 0
@@ -281,7 +289,6 @@ class UserScheduling(object):
                     max_action = action
                     max_sum_log = sum_log
                     tmp_max_ues_thr = copy.deepcopy(ues_thr)
-
 
         return rates, tmp_max_ri_ti_thr
 
