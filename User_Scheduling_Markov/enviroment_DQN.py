@@ -60,6 +60,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
 
 TransportBlockSizeTable  =  [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176, 208, 224, 256, 280, 328, 336, 376, 408, 440, 488, 520, 552, 584, 616, 712]
 
+time_window = 10
 
 class UserScheduling(object):
     def __init__(self, value0, value1, value2, bins):
@@ -169,8 +170,10 @@ class UserScheduling(object):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
         global old_action
         global old_optimal_action
+
         check = []
 
         #s_ = copy.deepcopy(observation)
@@ -187,7 +190,12 @@ class UserScheduling(object):
         else:
             thr_rl = R[0]
 
-        ues_thr_rl[action] += thr_rl
+        array = list(np.arange(n_UEs))
+        array.remove(action)
+        ues_thr_rl[array] = (1 - (1 / time_window)) * ues_thr_rl[array]
+        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1/time_window)*thr_rl
+
+        #ues_thr_rl[action] += thr_rl
 
         # reward function
         reward = 0
@@ -241,6 +249,7 @@ class UserScheduling(object):
         max_sum_log = 0
         rates = []
         global ues_thr_optimal_global
+        global ues_thr_ri_ti_global
         tmp_max_ues_thr = []
         max_action = 0
         max_ri_ti = 0
@@ -253,7 +262,12 @@ class UserScheduling(object):
             if option == 'test':
                 ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
                 ues_ri_ti_0 = rates[action] / ues_ri_ti_thr[action]
-                ues_ri_ti_thr[action] += rates[action]
+                array = list(copy.deepcopy(actions_array))
+                array.remove(action)
+
+                ues_ri_ti_thr[array] = (1-(1/time_window))*ues_ri_ti_thr[array]
+                ues_ri_ti_thr[action] = (1-(1/time_window))*ues_ri_ti_thr[action] + (1/time_window)*rates[action]
+
                 ues_thr = copy.deepcopy(ues_thr_optimal_global)
                 ues_thr[action] += rates[action]
                 if max_ri_ti <= ues_ri_ti_0:
