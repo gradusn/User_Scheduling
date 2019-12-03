@@ -114,6 +114,8 @@ class UserScheduling(object):
                 if scalar_gain_array[i] < cqi[j]:
                     Ues_Cqi.append(j)
                     break
+                elif j >= Max_Cqi-1:
+                    Ues_Cqi.append(Max_Cqi-1)
 
         return np.asarray(Ues_Cqi)
 
@@ -206,7 +208,8 @@ class UserScheduling(object):
         else:
             done = False
             # ues_thr_optimal_global = tmp_thr_optimal
-        ues_thr_optimal_global = tmp_thr_optimal
+        #ues_thr_optimal_global = tmp_thr_optimal
+        ues_thr_ri_ti_global = tmp_thr_optimal
         # next_channel_state = channel_chain.next_state(state)
         next_channel_state = self.create_rayleigh_fading()
         #channes_guass_corr = self.create_guass_vectors()
@@ -240,14 +243,23 @@ class UserScheduling(object):
         global ues_thr_optimal_global
         tmp_max_ues_thr = []
         max_action = 0
+        max_ri_ti = 0
+        tmp_max_ri_ti_thr = []
         for action in actions_array:
             UE_1 = action
             MCS = self.getMcsFromCqi(Ues_Cqi[UE_1])
             iTbs = McsToItbsDl[MCS]
             rates.append(TransportBlockSizeTable[iTbs])
             if option == 'test':
+                ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
+                ues_ri_ti_0 = rates[action] / ues_ri_ti_thr[action]
+                ues_ri_ti_thr[action] += rates[action]
                 ues_thr = copy.deepcopy(ues_thr_optimal_global)
                 ues_thr[action] += rates[action]
+                if max_ri_ti <= ues_ri_ti_0:
+                    max_ri_ti_action = action
+                    max_ri_ti = ues_ri_ti_0
+                    tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
                 sum_log = 0
                 for i in range(0, len(ues_thr)):
                     sum_log = sum_log + float(np.log2(ues_thr[i]))
@@ -257,7 +269,7 @@ class UserScheduling(object):
                     tmp_max_ues_thr = copy.deepcopy(ues_thr)
 
 
-        return rates, tmp_max_ues_thr
+        return rates, tmp_max_ri_ti_thr
 
 
 

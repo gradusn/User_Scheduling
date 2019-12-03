@@ -18,8 +18,8 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 60000000
-start_test = 500000
+max_episodes = 10
+start_test = 5
 
 def update():
     global option
@@ -78,7 +78,7 @@ def plot():
 
 
 if __name__ == "__main__":
-    plot()
+    #plot()
 
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
@@ -89,9 +89,9 @@ if __name__ == "__main__":
     meanvalue2 = 1
     modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
 
-    (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=17)
-    (n1, bins1, patches1) = hist(np.random.rayleigh(modevalue1, 50000000), bins=17)
-    (n2, bins2, patches2) = hist(np.random.rayleigh(modevalue2, 50000000), bins=17)
+    (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=16)
+    (n1, bins1, patches1) = hist(np.random.rayleigh(modevalue1, 50000000), bins=16)
+    (n2, bins2, patches2) = hist(np.random.rayleigh(modevalue2, 50000000), bins=16)
 
     #bins = [bins0, bins1, bins2]
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    #update()
+    update()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)
