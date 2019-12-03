@@ -68,7 +68,7 @@ def update():
     print('game over')
 
 def plot():
-    data = np.genfromtxt('Log_Thr_2_tti_test_0.9_epsilon_decay_10000000_NN_SM.csv',
+    data = np.genfromtxt('Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_GM.csv',
                          delimiter=',')
     sns.set(color_codes=True)
     sns.distplot(data, kde=False)
@@ -78,6 +78,8 @@ def plot():
 
 
 if __name__ == "__main__":
+    plot()
+
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
 
@@ -103,12 +105,12 @@ if __name__ == "__main__":
                       memory_size=2000,
                       # output_graph=True
                       )
-    #plot()
-    update()
-    with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
-        thr_csv = csv.writer(thr, dialect='excel')
-        thr_csv.writerow(enviroment_DQN.diff)
-        thr.close()
+
+    #update()
+    #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
+        #thr_csv = csv.writer(thr, dialect='excel')
+        #thr_csv.writerow(enviroment_DQN.diff)
+        #thr.close()
 
 
     #RL.plot_cost()
