@@ -127,7 +127,17 @@ class DeepQNetwork:
             action = np.random.randint(0, self.n_actions)
         return action
 
-    def learn(self, timer_tti, episode):
+    def choose_action_test(self, observation):
+        # to have batch dimension when feed into tf placeholder
+        observation = observation[np.newaxis, :]
+        # forward feed the observation and get q value for every actions
+        actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
+        action = np.argmax(actions_value)
+
+        return action
+
+
+    def learn(self, episode):
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.target_replace_op)
@@ -152,10 +162,10 @@ class DeepQNetwork:
         self.cost_his.append(cost)
 
         # increasing epsilon
-        if timer_tti == enviroment_DQN.max_time_slots:
-            self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
-                -self.epsilon_decay * episode)
-            print(self.epsilon)
+
+        self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
+            -self.epsilon_decay * episode)
+        print(self.epsilon)
         self.learn_step_counter += 1
 
     def plot_cost(self):
