@@ -19,7 +19,7 @@ property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_G
 corr_probability = 0.8
 
 max_episodes = 60000000
-max_test = 200000
+max_test = 500000
 
 def update():
     step = 0
@@ -40,7 +40,7 @@ def update():
         RL.store_transition(observation, action, reward, observation_)
 
         if (step > 200) and (step % 5 == 0):
-             RL.learn(episode)
+             RL.learn(episode, max_episodes)
 
         # swap observation
         observation = observation_
@@ -49,6 +49,7 @@ def update():
         step += 1
 
     # end of game
+    RL.save_mode()
     print('training over')
 
 def test():
@@ -57,6 +58,7 @@ def test():
     start_state = env.create_rayleigh_fading()
     observation = env.reset(start_state)
     timer_tti = 0
+    RL.load_model()
 
     for episode in range(max_test):
         print("test " + str(episode))
@@ -74,7 +76,7 @@ def test():
         timer_tti = timer_tti % 10
 
     print('testing over')
-    with open("Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_ri/ti.csv", "a") as thr:
+    with open("Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv", "a") as thr:
         thr_csv = csv.writer(thr, dialect='excel')
         thr_csv.writerow(enviroment_DQN.diff)
         thr.close()
@@ -82,7 +84,7 @@ def test():
 
 
 def plot():
-    data = np.genfromtxt('Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_GM.csv',
+    data = np.genfromtxt('Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv',
                          delimiter=',')
     sns.set(color_codes=True)
     sns.distplot(data, kde=False)
@@ -92,7 +94,7 @@ def plot():
 
 
 if __name__ == "__main__":
-    #plot()
+    plot()
 
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
@@ -120,8 +122,8 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    update()
-    test()
+    #update()
+    #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

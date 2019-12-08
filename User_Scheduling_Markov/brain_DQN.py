@@ -70,6 +70,8 @@ class DeepQNetwork:
             tf.summary.FileWriter("logs/", self.sess.graph)
 
         self.sess.run(tf.global_variables_initializer())
+        self.saver = tf.train.Saver()
+
         self.cost_his = []
 
     def _build_net(self):
@@ -80,6 +82,7 @@ class DeepQNetwork:
         self.a = tf.placeholder(tf.int32, [None, ], name='a')  # input Action
 
         w_initializer, b_initializer = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+
 
         # ------------------ build evaluate_net ------------------
         with tf.variable_scope('eval_net'):
@@ -138,7 +141,7 @@ class DeepQNetwork:
 
 
 
-    def learn(self, episode):
+    def learn(self, episode, max_episodes):
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.target_replace_op)
@@ -168,6 +171,20 @@ class DeepQNetwork:
             -self.epsilon_decay * episode)
         print(self.epsilon)
         self.learn_step_counter += 1
+
+    def save_mode(self):
+        w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
+        tvars_vals = self.sess.run(w)
+        print(tvars_vals)
+        save_path = self.saver.save(self.sess, "model.ckpt")
+
+
+    def load_model(self):
+        self.saver.restore(self.sess, "model.ckpt")
+        print("Model restored")
+        w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
+        tvars_vals = self.sess.run(w)
+        #print(tvars_vals)
 
     def plot_cost(self):
         import matplotlib.pyplot as plt
