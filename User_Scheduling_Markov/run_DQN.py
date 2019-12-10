@@ -3,6 +3,8 @@ from brain_DQN import DeepQNetwork
 import enviroment_DQN
 import numpy as np
 import csv
+from MarkovChain import MarkovChain
+
 
 
 
@@ -25,7 +27,8 @@ def update():
     step = 0
     global state_action
     global start_state
-    start_state = env.create_rayleigh_fading()
+    initial_channels = create_initial_states(channel_chain_array)
+    start_state = env.create_rayleigh_fading(initial_channels)
     observation = env.reset(start_state)
 
     for episode in range(max_episodes):
@@ -35,7 +38,7 @@ def update():
         action = RL.choose_action(observation)
 
         # RL take action and get next observation and reward
-        observation_, reward = env.step(action, observation, start_state, episode)
+        observation_, reward, initial_channels = env.step(action, observation, initial_channels, episode, channel_chain_array)
 
         RL.store_transition(observation, action, reward, observation_)
 
@@ -55,10 +58,11 @@ def update():
 def test():
     global state_action
     global start_state
-    start_state = env.create_rayleigh_fading()
+    initial_channels = create_initial_states(channel_chain_array)
+    start_state = env.create_rayleigh_fading(initial_channels)
     observation = env.reset(start_state)
     timer_tti = 0
-    RL.load_model()
+    #RL.load_model()
 
     for episode in range(max_test):
         print("test " + str(episode))
@@ -67,7 +71,7 @@ def test():
         action = RL.choose_action_test(observation)
 
         # RL take action and get next observation and reward
-        observation_ = env.step_test(action, observation, start_state, episode, timer_tti)
+        observation_, initial_channels = env.step_test(action, observation, initial_channels, episode, channel_chain_array, timer_tti)
 
         # swap observation
         observation = observation_
@@ -82,6 +86,12 @@ def test():
         thr.close()
 
 
+def create_initial_states(channel_chain_array):
+    channels = []
+    for i in range(0, env.n_UEs):
+        channels.append(channel_chain_array[i].next_state(0))
+
+    return channels
 
 def plot():
     data = np.genfromtxt('Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv',
@@ -94,7 +104,7 @@ def plot():
 
 
 if __name__ == "__main__":
-    plot()
+    #plot()
 
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
@@ -111,7 +121,19 @@ if __name__ == "__main__":
 
     #bins = [bins0, bins1, bins2]
 
+    transition_matrix = [[alpha_GB, 1-alpha_GB],[1-beta_GB, beta_GB]]
+
+
+
+
     env = UserScheduling(modevalue, modevalue1, modevalue2, bins0)
+
+    channel_chain_array = []
+    for i in range(0, env.n_UEs):
+        channel_chain = MarkovChain(transition_matrix=transition_matrix,
+                                    states=[meanvalue2, meanvalue])
+        channel_chain_array.append(channel_chain)
+
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
@@ -123,7 +145,7 @@ if __name__ == "__main__":
                       )
 
     #update()
-    #test()
+    test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

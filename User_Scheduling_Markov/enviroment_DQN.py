@@ -23,19 +23,25 @@ import pandas as pd
 
 import math
 
+from MarkovChain import MarkovChain
+
+
 modevalue0 = 0
 modevalue1 = 0
 modevalue2 = 0
 
 channelmatrix = [[]]
-n_UEs = 3
+n_UEs = 4
 comb = combinations(np.arange(n_UEs), 2)
-action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
+action_to_ues_tbl = pd.Series(comb, index=np.arange(binomial(n_UEs, 2)))
 scalar_gain_array = []
 
 cqi = []
 
-n_actions = binomial(n_UEs, 2)
+#n_actions = binomial(n_UEs, 2)
+
+n_actions = n_UEs
+
 corr_array = []
 
 ues_thr_optimal_global = []
@@ -46,7 +52,7 @@ n_Tx = 2
 Max_Cqi = 16
 Ues_Cqi = []
 
-SpectralEfficiencyForCqi= [0.0, 0.15, 0.23, 0.38, 0.6, 0.88, 1.18, 1.48, 1.91, 2.41, 2.73, 3.32, 3.9, 4.52, 5.12, 5.55]
+SpectralEfficiencyForCqi = [0.0, 0.15, 0.23, 0.38, 0.6, 0.88, 1.18, 1.48, 1.91, 2.41, 2.73, 3.32, 3.9, 4.52, 5.12, 5.55]
 
 SpectralEfficiencyForMcs = [0.15, 0.19, 0.23, 0.31, 0.38, 0.49, 0.6, 0.74, 0.88, 1.03, 1.18,
   1.33, 1.48, 1.7, 1.91, 2.16, 2.41, 2.57,
@@ -76,6 +82,7 @@ class UserScheduling(object):
         self.n_actions = n_actions
         #self.n_features = n_UEs * 3
         self.n_features = n_UEs * 2
+        self.n_UEs = n_UEs
 
 
     def create_channel(self, channels_gain, channels_corr):
@@ -105,16 +112,14 @@ class UserScheduling(object):
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
         ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
 
-    def create_rayleigh_fading(self):
+    def create_rayleigh_fading(self, initial_channels):
         global Ues_Cqi
         Ues_Cqi = []
         global scalar_gain_array
-        ray_0 = np.random.rayleigh(modevalue0, 1)
-        ray_1 = np.random.rayleigh(modevalue1, 1)
-        ray_2 = np.random.rayleigh(modevalue2, 1)
-        scalar_gain_array = [ray_0, ray_1, ray_2]
+        scalar_gain_array = []
 
         for i in range(0, n_UEs):
+            scalar_gain_array.append(np.random.rayleigh(initial_channels[i], 1))
             for j in range(1, Max_Cqi):
                 if scalar_gain_array[i] < cqi[j]:
                     Ues_Cqi.append(j)
@@ -170,7 +175,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, state, episode):
+    def step(self, action, observation, initial_channels, episode, channel_chain_array):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -178,9 +183,11 @@ class UserScheduling(object):
         global old_action
         global old_optimal_action
         global time_window
+        next_channel_state = []
+        next_channel_state_Cqi = []
 
         R, tmp_thr_optimal = self.get_rates(observation, action, 'train')
-        ues_thr_rl = copy.deepcopy(observation[:3])
+        ues_thr_rl = copy.deepcopy(observation[:n_UEs])
 
         thr_rl = R[0]
 
@@ -195,13 +202,14 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-        # next_channel_state = channel_chain.next_state(state)
-        next_channel_state = self.create_rayleigh_fading()
-        s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
+        for i in range(0, n_UEs):
+            next_channel_state.append(channel_chain_array[i].next_state(initial_channels[i]))
+        next_channel_state_Cqi = self.create_rayleigh_fading(next_channel_state)
+        s_ = np.concatenate((ues_thr_rl, next_channel_state_Cqi), axis=None)
 
-        return s_, reward
+        return s_, reward, next_channel_state
 
-    def step_test(self, action, observation, start_state, episode, timer_tti):
+    def step_test(self, action, observation, initial_channels, episode, channel_chain_array, timer_tti):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -209,9 +217,11 @@ class UserScheduling(object):
         global old_action
         global old_optimal_action
         global time_window
+        next_channel_state = []
+        next_channel_state_Cqi = []
 
         R, tmp_thr_optimal = self.get_rates(observation, action, 'test')
-        ues_thr_rl = copy.deepcopy(observation[:3])
+        ues_thr_rl = copy.deepcopy(observation[:n_UEs])
         thr_rl = R[action]
 
         array = list(np.arange(n_UEs))
@@ -231,10 +241,12 @@ class UserScheduling(object):
 
             diff.append(reward - reward_optimal)
 
-        next_channel_state = self.create_rayleigh_fading()
-        s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
+        for i in range(0, n_UEs):
+            next_channel_state.append(channel_chain_array[i].next_state(initial_channels[i]))
+        next_channel_state_Cqi = self.create_rayleigh_fading(next_channel_state)
+        s_ = np.concatenate((ues_thr_rl, next_channel_state_Cqi), axis=None)
 
-        return s_
+        return s_, next_channel_state
 
 
     def get_rates(self, observation, action_rl, option):
