@@ -73,10 +73,10 @@ def test():
         observation = observation_
 
         timer_tti += 1
-        timer_tti = timer_tti % 10
+        timer_tti = timer_tti % env.time_window_test
 
     print('testing over')
-    with open("Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv", "a") as thr:
+    with open("Log_Thr_1000_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv", "a") as thr:
         thr_csv = csv.writer(thr, dialect='excel')
         thr_csv.writerow(enviroment_DQN.diff)
         thr.close()
@@ -84,7 +84,7 @@ def test():
 
 
 def plot():
-    data = np.genfromtxt('Log_Thr_2_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv',
+    data = np.genfromtxt('Log_Thr_1000_tti_epsilon_decay_60000000_NN_SU_no_max_tti_riti.csv',
                          delimiter=',')
     sns.set(color_codes=True)
     sns.distplot(data, kde=False)
@@ -94,7 +94,7 @@ def plot():
 
 
 if __name__ == "__main__":
-    plot()
+    #plot()
 
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                       )
 
     #update()
-    #test()
+    test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

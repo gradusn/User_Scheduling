@@ -60,6 +60,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
 TransportBlockSizeTable  =  [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176, 208, 224, 256, 280, 328, 336, 376, 408, 440, 488, 520, 552, 584, 616, 712]
 
 time_window = 10
+time_window_test = 1000
 
 class UserScheduling(object):
     def __init__(self, value0, value1, value2, bins):
@@ -76,6 +77,7 @@ class UserScheduling(object):
         self.n_actions = n_actions
         #self.n_features = n_UEs * 3
         self.n_features = n_UEs * 2
+        self.time_window_test = time_window_test
 
 
     def create_channel(self, channels_gain, channels_corr):
@@ -220,7 +222,7 @@ class UserScheduling(object):
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
         ues_thr_ri_ti_global = tmp_thr_optimal
-        if timer_tti == time_window-1:
+        if timer_tti == time_window_test-1:
             reward_optimal = 0
             for i in range(0, len(tmp_thr_optimal)):
                 reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
