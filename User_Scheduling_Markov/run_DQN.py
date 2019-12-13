@@ -18,7 +18,7 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 60000000
+max_episodes = 100000000
 max_test = 500000
 
 def update():
@@ -99,10 +99,10 @@ if __name__ == "__main__":
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
 
-    meanvalue1 = 2
+    meanvalue1 = 3
     modevalue1 = np.sqrt(2 / np.pi) * meanvalue1
 
-    meanvalue2 = 1
+    meanvalue2 = 3
     modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
 
     (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=16)
@@ -122,8 +122,8 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    #update()
-    test()
+    update()
+    #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)
