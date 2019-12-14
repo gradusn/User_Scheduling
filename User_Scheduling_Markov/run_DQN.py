@@ -25,28 +25,37 @@ def update():
     step = 0
     global state_action
     global start_state
-    start_state = env.create_rayleigh_fading()
-    observation = env.reset(start_state)
+
 
     for episode in range(max_episodes):
+        timer_tti = 0
+
+        start_state = env.create_rayleigh_fading()
+        observation = env.reset(start_state)
+
         print("train " + str(episode))
 
-        # RL choose action based on observation
-        action = RL.choose_action(observation)
+        while True:
+            timer_tti += 1
 
-        # RL take action and get next observation and reward
-        observation_, reward = env.step(action, observation, start_state, episode)
+            # RL choose action based on observation
+            action = RL.choose_action(observation)
+            # RL take action and get next observation and reward
+            observation_, reward, done = env.step(action, observation, start_state, episode, timer_tti)
 
-        RL.store_transition(observation, action, reward, observation_)
+            RL.store_transition(observation, action, reward, observation_)
 
-        if (step > 200) and (step % 5 == 0):
-             RL.learn(episode, max_episodes)
+            if (step > 200) and (step % 5 == 0):
+                 RL.learn(episode, max_episodes, timer_tti)
 
-        # swap observation
-        observation = observation_
+            # swap observation
+            observation = observation_
 
-        # break while loop when end of this episode
-        step += 1
+            # break while loop when end of this episode
+            step += 1
+
+            if done:
+                break
 
     # end of game
     RL.save_mode()

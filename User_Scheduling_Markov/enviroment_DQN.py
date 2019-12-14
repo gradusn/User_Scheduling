@@ -59,6 +59,8 @@ TransportBlockSizeTable  =  [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176
 time_window = 10
 time_window_test = 1000
 
+max_time_slots = 5
+
 class UserScheduling(object):
     def __init__(self, value0, value1, value2, bins):
         super(UserScheduling, self).__init__()
@@ -169,7 +171,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, state, episode):
+    def step(self, action, observation, state, episode, timer_tti):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -194,11 +196,16 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
+        if timer_tti == max_time_slots:
+            done = True
+        else:
+            done = False
+
         # next_channel_state = channel_chain.next_state(state)
         next_channel_state = self.create_rayleigh_fading()
         s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
 
-        return s_, reward
+        return s_, reward, done
 
     def step_test(self, action, observation, start_state, episode, timer_tti):
         global ues_thr_random_global

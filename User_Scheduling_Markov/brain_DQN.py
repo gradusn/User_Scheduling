@@ -26,7 +26,7 @@ class DeepQNetwork:
             learning_rate=0.01,
             reward_decay=0.9,
             e_greedy=0.9,
-            minimum_epsilon=0.01,
+            minimum_epsilon=0.1,
             max_epsilon=1.0,
             epsilon_decay=0.0000001,
             replace_target_iter=500,
@@ -141,7 +141,7 @@ class DeepQNetwork:
 
 
 
-    def learn(self, episode, max_episodes):
+    def learn(self, episode, max_episodes, timer_tti):
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.target_replace_op)
@@ -166,10 +166,10 @@ class DeepQNetwork:
         self.cost_his.append(cost)
 
         # increasing epsilon
-        #if timer_tti == enviroment_DQN.max_time_slots:
-        self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
-            -self.epsilon_decay * episode)
-        print(self.epsilon)
+        if timer_tti == enviroment_DQN.max_time_slots:
+            self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
+                -self.epsilon_decay * episode)
+            print(self.epsilon)
         self.learn_step_counter += 1
 
     def save_mode(self):
