@@ -109,7 +109,7 @@ def plot():
 
 
 if __name__ == "__main__":
-    #plot()
+    plot()
 
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
@@ -138,7 +138,7 @@ if __name__ == "__main__":
                       )
 
     #update()
-    test()
+    #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)
