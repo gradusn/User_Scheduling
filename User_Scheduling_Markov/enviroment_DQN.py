@@ -57,7 +57,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
 TransportBlockSizeTable  =  [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176, 208, 224, 256, 280, 328, 336, 376, 408, 440, 488, 520, 552, 584, 616, 712]
 
 time_window = 10
-time_window_test = 1000
+time_window_test = 5
 
 max_time_slots = 5
 
@@ -226,7 +226,8 @@ class UserScheduling(object):
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
         ues_thr_ri_ti_global = tmp_thr_optimal
-        if timer_tti == time_window_test-1:
+        if timer_tti == time_window_test:
+            done = True
             reward_optimal = 0
             for i in range(0, len(tmp_thr_optimal)):
                 reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
@@ -236,11 +237,13 @@ class UserScheduling(object):
                 reward = reward + float(np.log2(ues_thr_rl[i]))
 
             diff.append(reward - reward_optimal)
+        else:
+            done = False
 
         next_channel_state = self.create_rayleigh_fading()
         s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
 
-        return s_
+        return s_, done
 
 
     def get_rates(self, observation, action_rl, option):

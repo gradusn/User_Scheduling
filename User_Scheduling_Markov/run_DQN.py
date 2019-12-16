@@ -66,26 +66,35 @@ def test():
     global start_state
     RL.load_model()
 
-    for iter in range(0,10):
-        start_state = env.create_rayleigh_fading()
-        observation = env.reset(start_state)
-        timer_tti = 0
+    for iter in range(0,1):
+        string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_5_tti_riti_same_rayleigh" + str(
+            iter) + ".csv"
+
+
         for episode in range(max_test):
-            string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(iter) + ".csv"
+            start_state = env.create_rayleigh_fading()
+            observation = env.reset(start_state)
+            timer_tti = 0
 
-            print("test " + str(episode))
+            while True:
+                timer_tti += 1
 
-            # RL choose action based on observation
-            action = RL.choose_action_test(observation)
 
-            # RL take action and get next observation and reward
-            observation_ = env.step_test(action, observation, start_state, episode, timer_tti)
+                print("test " + str(episode))
 
-            # swap observation
-            observation = observation_
+                # RL choose action based on observation
+                action = RL.choose_action_test(observation)
 
-            timer_tti += 1
-            timer_tti = timer_tti % env.time_window_test
+                # RL take action and get next observation and reward
+                observation_, done = env.step_test(action, observation, start_state, episode, timer_tti)
+
+                # swap observation
+                observation = observation_
+
+                if done:
+                    break
+
+                #timer_tti_test = timer_tti_test % env.time_window_test
 
         print('testing ' + str(iter) + ' over')
         with open(string, "a") as thr:
@@ -100,10 +109,10 @@ def plot():
 
 
     iter = 0
-    string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(iter) + ".csv"
+    string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_5_tti_riti_same_rayleigh" + str(iter) + ".csv"
     data = np.genfromtxt(string, delimiter=',')
     data2d_1 = np.atleast_2d(data)
-    for iter in range(1, 10):
+    for iter in range(1, 1):
         string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(iter) + ".csv"
         data = np.genfromtxt(string, delimiter=',')
         data2d = np.atleast_2d(data)
@@ -147,7 +156,7 @@ if __name__ == "__main__":
                       )
 
     #update()
-    #test()
+   # test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)
