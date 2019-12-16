@@ -118,15 +118,15 @@ def plot():
 
 
 if __name__ == "__main__":
-    plot()
+    #plot()
 
     meanvalue = 3
     modevalue = np.sqrt(2 / np.pi) * meanvalue
 
-    meanvalue1 = 3
+    meanvalue1 = 2
     modevalue1 = np.sqrt(2 / np.pi) * meanvalue1
 
-    meanvalue2 = 3
+    meanvalue2 = 1
     modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
 
     (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=16)
@@ -146,7 +146,7 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    #update()
+    update()
     #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')

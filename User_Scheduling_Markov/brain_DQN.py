@@ -180,7 +180,7 @@ class DeepQNetwork:
 
 
     def load_model(self):
-        self.saver.restore(self.sess, "model_3_ues_same_rayleigh.ckpt")
+        self.saver.restore(self.sess, "model_3_ues_SU_limit_TTI.ckpt")
         print("Model restored")
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)
