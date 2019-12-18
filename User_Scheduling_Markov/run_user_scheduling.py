@@ -11,6 +11,7 @@ from matplotlib.ticker import PercentFormatter
 from User_scheduling_env import UserScheduling
 from Brain_user_scheduling import QLearningTable
 from MarkovChain import MarkovChain
+import User_scheduling_env
 
 
 import timeit
@@ -30,14 +31,18 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 6000000
+max_episodes = 5
 max_runs_stats = 500
+max_test = 500000
+
 
 
 def update():
     global state_action
     global start_state
     for episode in range(max_episodes):
+        print("train " + str(episode))
+
         timer_tti = 0
         # initial observation
         #start_state = channel_chain.next_state(start_state)
@@ -58,7 +63,7 @@ def update():
 
 
             # RL take action and get next observation and reward
-            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode, option )
+            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode)
 
             # RL learn from this transition
             RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
@@ -67,14 +72,49 @@ def update():
 
             observation = observation_
 
-
-            # break while loop when end of this episode
             if done:
                 break
 
     # end of game
+    RL.save_table()
     print('training over')
-    #env.destroy()
+
+def test():
+    global state_action
+    global start_state
+    RL.load_table()
+    for iter in range(0, 1):
+        string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(
+            iter) + ".csv"
+
+        for episode in range(max_test):
+            print("test " + str(episode))
+
+            timer_tti = 0
+            start_state = np.random.choice(states)
+            channels = env.create_channel(start_state, corr_chain.next_state(0))
+            observation = env.reset(channels)
+
+            while True:
+                timer_tti += 1
+
+                action = RL.choose_action_test(str(observation))
+                observation_, start_state, done = env.step_test(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode)
+
+                # swap observation
+                observation = observation_
+
+                if done:
+                    break
+
+        print('testing ' + str(iter) + ' over')
+        with open(string, "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(User_scheduling_env.diff)
+            thr.close()
+        User_scheduling_env.diff = []
+
+
 
 def test_markov():
     start_state = np.random.choice(states)
@@ -90,41 +130,6 @@ def test_markov():
     plt.show()
 
 
-    #avg_run = []
-
-    #for i in range(0, max_runs_stats):
-        #print (i)
-        #start_state = np.random.choice(states)
-        #corr_state = np.random.choice(corr)
-        #env.init_for_test()
-        #avg_run.append(RL.testing_markov(start_state, channel_chain, corr_chain, env, corr_state, avg_run))
-
-    #with open("Log_Thr_Markov_3_tti_test_0.9_epsilon_decay_20000000_avg_500_runs.csv", "a") as thr:
-        #thr_csv = csv.writer(thr, dialect='excel')
-        #thr_csv.writerow(avg_run)
-        #thr.close()
-
-def test():
-    global option
-    option = 'test'
-    states = ['G G G_GB', 'G G G_BG', 'G G G_BB',
-              'G G B_GB', 'G G B_BG', 'G G B_BB',
-              'G B G_GB', 'G B G_BG', 'G B G_BB',
-              'B G G_GB', 'B G G_BG', 'B G G_BB',
-              'G B B_GB', 'G B B_BG', 'G B B_BB',
-              'B B G_GB', 'B B G_BG', 'B B G_BB',
-              'B G B_GB', 'B G B_BG', 'B G B_BB',
-              'B B B_GB', 'B B B_BG', 'B B B_BB'
-              ]
-    states_test = [('B G B_BG', 'B B G_BG')]
-
-    states_possible = [p for p in itertools.product(states, repeat=2)]
-    env.init_for_test()
-    RL.testing(states_possible, env)
-
-    #example = [x for x in itertools.product([1,2,3], repeat=2)]
-    #size = len(states_possible)
-    #print(size)
 
 def Create_transtion_matrix(states):
     global property_to_probablity
@@ -183,7 +188,7 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
     #update()
-    #test()
-    test_markov()
+    test()
+    #test_markov()
     #env.after(100, update)
     #env.mainloop()

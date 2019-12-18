@@ -29,7 +29,7 @@ class QLearningTable:
         self.actions = actions  # a list
         self.lr = learning_rate
         self.gamma = reward_decay
-        self.epsilon = e_greedy
+        self.epsilon = max_epsilon
         self.minimum_epsilon = min_epsilon
         self.maximum_epsilon = max_epsilon
         self.epsilon_decay = epsilon_decay
@@ -178,6 +178,17 @@ class QLearningTable:
 
         return action
 
+    def choose_action_test(self, observation):
+        if observation not in self.q_table.index:
+            print("No state in table")
+            state_action = self.q_table.iloc[0, :]
+        else:
+            state_action = self.q_table.loc[observation, :]
+        action = np.random.choice(state_action[state_action == np.max(state_action)].index)
+
+        return action
+
+
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
         self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[s, a]
@@ -188,18 +199,15 @@ class QLearningTable:
 
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
         if timer_tti == User_scheduling_env.max_time_slots:
-            #self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
-                #-self.epsilon_decay * episode)
-            #print(self.epsilon)
-            print(episode)
-            if episode == max_episodes-1:
-                self.q_table.to_pickle("q_learning_table_Markov_0.9_gamma_1_epsilon_0.2_2_tti_6000000.pkl")
+            self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
+                -self.epsilon_decay * episode)
+            print(self.epsilon)
 
+    def save_table(self):
+        self.q_table.to_pickle("test.pkl")
 
-
-            #self.test2()
-            #if episode == 5:
-                #self.test()
+    def load_table(self):
+        self.q_table = pd.read_pickle("test.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index and timer_tti < User_scheduling_env.max_time_slots:
