@@ -48,7 +48,7 @@ def update():
         #start_state = channel_chain.next_state(start_state)
         start_state = np.random.choice(states)
         channels = env.create_channel(start_state, corr_chain.next_state(0))
-        observation = env.reset(channels)
+        observation, state = env.reset(channels)
 
 
 
@@ -63,7 +63,7 @@ def update():
 
 
             # RL take action and get next observation and reward
-            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode)
+            observation_, reward, start_state, done, state_ = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode, state)
 
             # RL learn from this transition
             RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
@@ -71,6 +71,7 @@ def update():
             # swap observation
 
             observation = observation_
+            state = state_
 
             if done:
                 break
@@ -187,8 +188,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

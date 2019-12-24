@@ -15,6 +15,7 @@ import numpy as np
 import time
 import sys
 import pandas as pd
+from matplotlib.pyplot import hist
 from sympy import binomial
 import math
 import copy
@@ -89,14 +90,25 @@ class UserScheduling(object):
 
     def reset(self, channel_state):
         array = np.ones((n_UEs,), dtype=float)
-        observations = np.array([array, channel_state], dtype=object)
+        observations = self.quantize(array, channel_state)
+        state = np.array([array, channel_state], dtype=object)
         global ues_thr_random_global
         global ues_thr_optimal_global
         global ues_thr_ri_ti_global
         ues_thr_random_global = np.ones((n_UEs,), dtype=float)
         ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
         ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
+        return observations, state
+
+    def quantize(self, array, channel_state):
+        array_quantized_max = np.max(array)
+        array_quantized_diff = array - array_quantized_max
+        bins = pd.cut(array_quantized_diff, bins=3, labels=['0', '1', '2'])
+        observations = np.array([str(bins[0] + bins[1] + bins[2]), channel_state], dtype=object)
         return observations
+
+
+
 
     def init_for_test(self):
         global ues_thr_random_global
@@ -129,7 +141,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode):
+    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode, state_orig):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -137,8 +149,8 @@ class UserScheduling(object):
         global old_optimal_action
         check = []
 
-        s_ = copy.deepcopy(observation)
-        R, tmp_thr_optimal = self.get_rates(observation, action, 'train')
+        s_ = copy.deepcopy(state_orig)
+        R, tmp_thr_optimal = self.get_rates(state_orig, action, 'train')
         #old_optimal_action.append(optimal_action)
         #old_action.append(action)
 
@@ -169,9 +181,10 @@ class UserScheduling(object):
 
         next_channel_state = channel_chain.next_state(state)
         channels = self.create_channel(next_channel_state, corr_chain.next_state(0))
-        s_ = np.array([ues_thr_rl, channels], dtype=object)
+        s_ = self.quantize(ues_thr_rl, channels)
+        state_ = np.array([ues_thr_rl, channels], dtype=object)
 
-        return s_, reward, next_channel_state,  done
+        return s_, reward, next_channel_state, done, state_
 
     def step_test(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
