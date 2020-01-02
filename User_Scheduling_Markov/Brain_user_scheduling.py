@@ -204,7 +204,8 @@ class QLearningTable:
             print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("q_learning_3_UEs_10TTi_10Ts_thr_quantization.pkl")
+
+        self.q_table.to_pickle("q_learning_simple_3Thrquantized_6milE_3Ues.pkl")
 
     def load_table(self):
         self.q_table = pd.read_pickle("test.pkl")
