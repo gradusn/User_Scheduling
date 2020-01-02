@@ -31,7 +31,7 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 6000000
+max_episodes = 10000000
 max_runs_stats = 500
 max_test = 500000
 
