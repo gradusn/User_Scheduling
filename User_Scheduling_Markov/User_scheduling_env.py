@@ -103,7 +103,8 @@ class UserScheduling(object):
     def quantize(self, array, channel_state):
         array_quantized_max = np.max(array)
         array_quantized_diff = array - array_quantized_max
-        bins = pd.cut(array_quantized_diff, bins=3, labels=['0', '1', '2'])
+        bins = pd.cut(array_quantized_diff, bins=3, labels=['0', '1', '2'], retbins=True)
+        bins=bins[0]
         observations = np.array([str(bins[0] + bins[1] + bins[2]), channel_state], dtype=object)
         return observations
 
