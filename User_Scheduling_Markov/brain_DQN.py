@@ -176,15 +176,15 @@ class DeepQNetwork:
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)
         print(tvars_vals)
-        save_path = self.saver.save(self.sess, "model_3_ues_same_rayleigh.ckpt")
+        save_path = self.saver.save(self.sess, "model_3_ues_SU_DQN_10_tti_10ts_1051ray.ckpt")
 
 
     def load_model(self):
-        self.saver.restore(self.sess, "model_3_ues_SU_limit_TTI.ckpt")
+        self.saver.restore(self.sess, "model_3_ues_SU_DQN_10_tti_10ts_1051ray.ckpt")
         print("Model restored")
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)
-        #print(tvars_vals)
+        print(tvars_vals)
 
     def plot_cost(self):
         import matplotlib.pyplot as plt

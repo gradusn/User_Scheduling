@@ -59,7 +59,8 @@ TransportBlockSizeTable  =  [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176
 time_window = 10
 time_window_test = 1000
 
-max_time_slots = 5
+max_time_slots = 10
+max_time_slots_test = 10
 
 class UserScheduling(object):
     def __init__(self, value0, value1, value2, bins):
@@ -226,7 +227,7 @@ class UserScheduling(object):
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
         ues_thr_ri_ti_global = tmp_thr_optimal
-        if timer_tti == time_window_test-1:
+        if timer_tti == max_time_slots_test:
             reward_optimal = 0
             for i in range(0, len(tmp_thr_optimal)):
                 reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
@@ -237,10 +238,14 @@ class UserScheduling(object):
 
             diff.append(reward - reward_optimal)
 
+            done = True
+        else:
+            done = False
+
         next_channel_state = self.create_rayleigh_fading()
         s_ = np.concatenate((ues_thr_rl, next_channel_state), axis=None)
 
-        return s_
+        return s_, done
 
 
     def get_rates(self, observation, action_rl, option):

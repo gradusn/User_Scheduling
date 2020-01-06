@@ -18,7 +18,7 @@ beta_GB = 0.9
 property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
 corr_probability = 0.8
 
-max_episodes = 100000000
+max_episodes = 120000000
 max_test = 500000
 
 def update():
@@ -66,26 +66,29 @@ def test():
     global start_state
     RL.load_model()
 
-    for iter in range(0,10):
-        start_state = env.create_rayleigh_fading()
-        observation = env.reset(start_state)
-        timer_tti = 0
+    for iter in range(0,1):
+        string = "Log_Thr_NN_model_3_ues_SU_DQN_10_tti_10_timeScale_1051rays" + str(iter) + ".csv"
+
         for episode in range(max_test):
-            string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(iter) + ".csv"
+            timer_tti = 0
 
-            print("test " + str(episode))
+            start_state = env.create_rayleigh_fading()
+            observation = env.reset(start_state)
 
-            # RL choose action based on observation
-            action = RL.choose_action_test(observation)
+            while True:
+                timer_tti += 1
+                print("test " + str(episode))
+                # RL choose action based on observation
+                action = RL.choose_action_test(observation)
 
-            # RL take action and get next observation and reward
-            observation_ = env.step_test(action, observation, start_state, episode, timer_tti)
+                # RL take action and get next observation and reward
+                observation_, done = env.step_test(action, observation, start_state, episode, timer_tti)
 
-            # swap observation
-            observation = observation_
+                # swap observation
+                observation = observation_
 
-            timer_tti += 1
-            timer_tti = timer_tti % env.time_window_test
+                if done:
+                    break
 
         print('testing ' + str(iter) + ' over')
         with open(string, "a") as thr:
@@ -100,30 +103,30 @@ def plot():
 
 
     iter = 0
-    string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(iter) + ".csv"
+    string = "Log_Thr_NN_model_3_ues_SU_DQN_10_tti_10_timeScale_1051rays" + str(iter) + ".csv"
     data = np.genfromtxt(string, delimiter=',')
-    data2d_1 = np.atleast_2d(data)
-    for iter in range(1, 10):
+    #data2d_1 = np.atleast_2d(data)
+    for iter in range(1, 1):
         string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(iter) + ".csv"
         data = np.genfromtxt(string, delimiter=',')
         data2d = np.atleast_2d(data)
         gather = np.concatenate((data2d_1, data2d), axis=0)
         data2d_1 = gather
-    mean_result = np.mean(data2d_1, axis=0)
+   # mean_result = np.mean(data2d_1, axis=0)
     sns.set(color_codes=True)
-    sns.distplot(mean_result, kde=False)
+    sns.distplot(data, kde=False)
     plt.xlabel("LogThr BF vs RL")
     plt.ylabel("Number of Observations")
     plt.show()
 
 
 if __name__ == "__main__":
-    #plot()
+    plot()
 
-    meanvalue = 3
+    meanvalue = 10
     modevalue = np.sqrt(2 / np.pi) * meanvalue
 
-    meanvalue1 = 2
+    meanvalue1 = 5
     modevalue1 = np.sqrt(2 / np.pi) * meanvalue1
 
     meanvalue2 = 1
@@ -146,7 +149,7 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    update()
+    #update()
     #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
