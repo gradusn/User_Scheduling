@@ -176,7 +176,9 @@ class DeepQNetwork:
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)
         print(tvars_vals)
-        save_path = self.saver.save(self.sess, "model_3_ues_SU_DQN_10_tti_10ts_1051ray.ckpt")
+
+        save_path = self.saver.save(self.sess, "model_3_ues_limit5_thr_win5.ckpt")
+
 
 
     def load_model(self):
