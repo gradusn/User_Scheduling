@@ -23,7 +23,7 @@ max_testing_episodes = 200000
 
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.8, reward_decay=1, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
                  epsilon_decay=0.001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
@@ -192,25 +192,32 @@ class QLearningTable:
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
         self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[s, a]
+        '''
         if (timer_tti < User_scheduling_env.max_time_slots):
             q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
         else:
             q_target = r   # next state is terminal
+        '''
+        q_target = r + self.gamma * self.q_table.loc[s_, :].max()
 
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
+        '''
         if timer_tti == User_scheduling_env.max_time_slots:
             self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
                 -self.epsilon_decay * episode)
             print(self.epsilon)
+        '''
+        self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
+            -self.epsilon_decay * episode)
 
     def save_table(self):
-        self.q_table.to_pickle("test.pkl")
+        self.q_table.to_pickle("qtable_SU_example.pkl")
 
     def load_table(self):
         self.q_table = pd.read_pickle("test.pkl")
 
     def check_state_exist(self, state, timer_tti):
-        if state not in self.q_table.index and timer_tti < User_scheduling_env.max_time_slots:
+        if state not in self.q_table.index:
             # append new state to q table
             self.q_table = self.q_table.append(
                 pd.Series(

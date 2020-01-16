@@ -39,7 +39,7 @@ algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain = {'G': [3, 3], 'B': [0.5, 0.5]}
+gain = {'G': [15, 15], 'B': [5, 5]}
 
 channelmatrix = [[]]
 
@@ -63,9 +63,25 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 10
+time_window = 2
 time_window_test = 2
 diff = []
+
+Max_Cqi = 16
+Ues_Cqi = []
+
+SpectralEfficiencyForCqi = [0.0, 0.15, 0.23, 0.38, 0.6, 0.88, 1.18, 1.48, 1.91, 2.41, 2.73, 3.32, 3.9, 4.52, 5.12, 5.55]
+
+SpectralEfficiencyForMcs = [0.15, 0.19, 0.23, 0.31, 0.38, 0.49, 0.6, 0.74, 0.88, 1.03, 1.18,
+  1.33, 1.48, 1.7, 1.91, 2.16, 2.41, 2.57,
+  2.73, 3.03, 3.32, 3.61, 3.9, 4.21, 4.52, 4.82, 5.12, 5.33, 5.55,
+  0, 0, 0]
+
+
+McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
+  19, 20, 21, 22, 23, 24, 25, 26]
+
+TransportBlockSizeTable = [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176, 208, 224, 256, 280, 328, 336, 376, 408, 440, 488, 520, 552, 584, 616, 712]
 
 
 
@@ -82,13 +98,13 @@ class UserScheduling(object):
         # self.title('User_scheduling')
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
-    def create_channel(self, channels_gain, channels_corr):
-        return str(channels_gain)+str("_")+str(channels_corr)
+    def create_channel(self, channels_gain):
+        return str(channels_gain)
 
 
 
     def reset(self, channel_state):
-        array = np.ones((n_UEs,), dtype=float)
+        array = np.full((1,n_UEs),0.00001, dtype=float)
         observations = np.array([array, channel_state], dtype=object)
         global ues_thr_random_global
         global ues_thr_optimal_global
@@ -108,28 +124,11 @@ class UserScheduling(object):
 
     def mapstatetovectors(self, state):
 
-        state = state[1]
-        corr = state.split("_")[1]
-
-        global channelmatrix
-        ind = np.random.choice([0, 1])
-        ind_1 = ind ^ 1
-        ind_2 = 2
-        if corr != 'BB':
-            if corr == 'GB':
-                channel_matrix = channel_vectors[[ind, ind_1, ind_2], :]
-            else:
-                channel_matrix = channel_vectors[[ind, ind_2, ind_1], :]
-        else:
-            channel_matrix = channel_vectors[[ind_2, ind, ind_1], :]
-
-        channelmatrix = channel_matrix
-
-        gain_array = state.split("_")[0].split()
+        gain_array = state[1].split()
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
 
-    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode):
+    def step(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -137,39 +136,42 @@ class UserScheduling(object):
         global old_optimal_action
         check = []
 
-        s_ = copy.deepcopy(observation)
         R, tmp_thr_optimal = self.get_rates(observation, action, 'train')
-        #old_optimal_action.append(optimal_action)
-        #old_action.append(action)
 
-        ues_thr_rl = copy.deepcopy(s_[0])
+        ues_thr_rl = copy.deepcopy(observation[0])
+        ues_thr_rl = ues_thr_rl[:3].flatten()
 
-        thr_rl = R[0]
+
+        thr_rl = R[0]*1000/1000000
 
         array = list(np.arange(n_UEs))
-        array.remove(action_to_ues_tbl[action][0])
-        array.remove(action_to_ues_tbl[action][1])
-
-        ues_thr_rl[array] = (1 - (1 / time_window)) * ues_thr_rl[array]
-        ues_thr_rl[action_to_ues_tbl[action][0]] = (1 - (1 / time_window)) * ues_thr_rl[action_to_ues_tbl[action][0]] + (1 / time_window) * thr_rl[0]
-        ues_thr_rl[action_to_ues_tbl[action][1]] = (1 - (1 / time_window)) * ues_thr_rl[action_to_ues_tbl[action][1]] + (1 / time_window) * thr_rl[1]
+        array.remove(action)
+        if (timer_tti == 1):
+            ues_thr_rl[action] = thr_rl
+        else:
+            for i in array:
+                if (ues_thr_rl[i] != 0.00001):
+                    ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
+            if (ues_thr_rl[action] == 0.00001):
+                ues_thr_rl[action] = (1 / time_window) * thr_rl
+            else:
+                ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
         # reward function
         reward = 0
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-
+        next_channel_state = channel_chain.next_state(state)
+        channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots:
+            s_ = self.reset(channels)
             done = True
 
         else:
             done = False
-
-        next_channel_state = channel_chain.next_state(state)
-        channels = self.create_channel(next_channel_state, corr_chain.next_state(0))
-        s_ = np.array([ues_thr_rl, channels], dtype=object)
+            s_ = np.array([ues_thr_rl, channels], dtype=object)
 
         return s_, reward, next_channel_state,  done
 
@@ -245,40 +247,10 @@ class UserScheduling(object):
         max_action = 0
         max_ri_ti_action = 0
         for action in actions_array:
-            UE_1 = action_to_ues_tbl[action][0]
-            UE_2 = action_to_ues_tbl[action][1]
-            scalar_gain = [scalar_gain_array[UE_1], scalar_gain_array[UE_2]]
-            channelmatrix_users = copy.deepcopy(channelmatrix)
-            channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
-            h_inv = np.linalg.pinv(channelmatrix_users)
-            h_inv_tra = np.transpose(h_inv)
-            # Normalizing the inverse channel matrix
-            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.sum((np.power(h_inv_tra[0], 2))))
-            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.sum((np.power(h_inv_tra[1], 2))))
-            S = []
-            N = []
-            sum = 0
-            SINR = []
-            R = []
-
-            for i in range(0, len(channelmatrix_users)):
-                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
-                S.append(np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[i])))
-            for i in range(0, len(channelmatrix_users)):
-                array = list(range(0, len(channelmatrix_users)))
-                array.remove(i)
-                for j in array:
-                    if np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j])) < 10 ** -10:
-                        sum = sum + 0
-                    else:
-                        sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
-                N.append(sum)
-                sum = 0
-
-            for i in range(0, len(channelmatrix_users)):
-                SINR.append(S[i] / (1 + N[i]))
-                R.append(math.log((1 + SINR[i]), 2))
-            rates.append(R)
+            UE_1 = action
+            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[iTbs])
             if option == 'test':
                 ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
                 ues_ri_ti_0 = rates[action][0] / ues_ri_ti_thr[action_to_ues_tbl[action][0]]
@@ -303,6 +275,16 @@ class UserScheduling(object):
 
 
         return  rates, tmp_max_ri_ti_thr
+
+    def getMcsFromCqi(self, ue_cqi):
+        spectralEfficiency = SpectralEfficiencyForCqi[ue_cqi]
+        mcs = 0
+        while mcs < 28 and (SpectralEfficiencyForMcs[mcs + 1] <= spectralEfficiency):
+            mcs = mcs + 1
+
+        return mcs
+
+
 
     def render(self):
         time.sleep(0.1)

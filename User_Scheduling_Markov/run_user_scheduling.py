@@ -28,7 +28,15 @@ state_action = []
 
 alpha_GB = 0.9
 beta_GB = 0.9
-property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
+
+n_UEs = 3
+
+
+property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
+property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
+
+
 corr_probability = 0.8
 
 max_episodes = 5
@@ -40,40 +48,32 @@ max_test = 500000
 def update():
     global state_action
     global start_state
+
+    start_state = 'G G G'
+    channels = env.create_channel(start_state)
+    observation = env.reset(channels)
+    timer_tti = 0
     for episode in range(max_episodes):
         print("train " + str(episode))
 
-        timer_tti = 0
-        # initial observation
-        #start_state = channel_chain.next_state(start_state)
-        start_state = np.random.choice(states)
-        channels = env.create_channel(start_state, corr_chain.next_state(0))
-        observation = env.reset(channels)
+        timer_tti += 1
+
+        # RL choose action based on observation
+        action = RL.choose_action(str(observation), timer_tti)
 
 
+        # RL take action and get next observation and reward
+        observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
 
-        while True:
-            timer_tti += 1
-            # fresh env
-            #env.render()
+        # RL learn from this transition
+        RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
 
+        # swap observation
 
-            # RL choose action based on observation
-            action = RL.choose_action(str(observation), timer_tti)
+        observation = observation_
 
-
-            # RL take action and get next observation and reward
-            observation_, reward, start_state, done = env.step(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode)
-
-            # RL learn from this transition
-            RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
-
-            # swap observation
-
-            observation = observation_
-
-            if done:
-                break
+        if done:
+            timer_tti = 0
 
     # end of game
     RL.save_table()
@@ -92,14 +92,14 @@ def test():
 
             timer_tti = 0
             start_state = np.random.choice(states)
-            channels = env.create_channel(start_state, corr_chain.next_state(0))
+            channels = env.create_channel(start_state)
             observation = env.reset(channels)
 
             while True:
                 timer_tti += 1
 
                 action = RL.choose_action_test(str(observation))
-                observation_, start_state, done = env.step_test(action, observation, corr_chain, start_state, timer_tti, channel_chain, episode)
+                observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
 
                 # swap observation
                 observation = observation_
@@ -132,7 +132,12 @@ def test_markov():
 
 
 def Create_transtion_matrix(states):
-    global property_to_probablity
+    global property_to_probability1
+    global property_to_probability2
+    global property_to_probability3
+
+
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
     transition_matrix = []
     row_transition_matrix = []
     probability = 1
@@ -144,9 +149,9 @@ def Create_transtion_matrix(states):
             channels_2 = j.split()
             for k in range(0, len(channels_1)):
                 if channels_1[k] == channels_2[k]:
-                    probability = probability * property_to_probablity[channels_1[k]][0]
+                    probability = probability * global_transition[k][channels_1[k]][0]
                 else:
-                    probability = probability * property_to_probablity[channels_1[k]][1]
+                    probability = probability * global_transition[k][channels_1[k]][1]
             row_transition_matrix.append(probability)
         transition_matrix.append(row_transition_matrix)
 
@@ -177,18 +182,21 @@ if __name__ == "__main__":
               'B B B'
               ]
 
-    corr = ['GB', 'BG', 'BB']
 
-    transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-    corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
+
+    #corr = ['GB', 'BG', 'BB']
+
+    #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
     transition_matrix_channel = Create_transtion_matrix(states)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
                                 states=states)
 
+
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
