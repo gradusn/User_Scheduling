@@ -39,9 +39,9 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 5
+max_episodes = 5000000
 max_runs_stats = 500
-max_test = 500000
+max_test = 100000
 
 
 
@@ -82,35 +82,41 @@ def update():
 def test():
     global state_action
     global start_state
+
+    start_state = 'G G G'
+    channels = env.create_channel(start_state)
+    observation = env.reset(channels)
+    timer_tti = 0
     RL.load_table()
     for iter in range(0, 1):
-        string = "Log_Thr_1000_tti_epsilon_decay_100000000_NN_SU_3_ues_no_max_tti_riti_same_rayleigh" + str(
+        string_pf = "q_learning_SU_simple_2tti_pf" + str(
+            iter) + ".csv"
+        string_rl = "q_learning_SU_simple_2tti_rl" + str(
             iter) + ".csv"
 
         for episode in range(max_test):
             print("test " + str(episode))
 
-            timer_tti = 0
-            start_state = np.random.choice(states)
-            channels = env.create_channel(start_state)
-            observation = env.reset(channels)
+            timer_tti += 1
 
-            while True:
-                timer_tti += 1
+            action = RL.choose_action_test(str(observation))
+            observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
 
-                action = RL.choose_action_test(str(observation))
-                observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
+            # swap observation
+            observation = observation_
 
-                # swap observation
-                observation = observation_
-
-                if done:
-                    break
+            if done:
+                timer_tti = 0
 
         print('testing ' + str(iter) + ' over')
-        with open(string, "a") as thr:
+
+        with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.diff)
+            thr_csv.writerow(User_scheduling_env.mean_rl)
+            thr.close()
+        with open(string_pf, "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(User_scheduling_env.mean_pf)
             thr.close()
         User_scheduling_env.diff = []
 
@@ -195,8 +201,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
