@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 2
+max_time_slots = 4
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -39,7 +39,8 @@ algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain = {'G': [15, 15], 'B': [5, 5]}
+gain0 = {'G': [15, 15], 'B': [5, 5]}
+
 
 channelmatrix = [[]]
 
@@ -63,8 +64,8 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 2
-time_window_test = 2
+time_window = 4
+time_window_test = 4
 diff = []
 metric_rl = []
 metric_pf = []
@@ -85,8 +86,7 @@ SpectralEfficiencyForMcs = [0.15, 0.19, 0.23, 0.31, 0.38, 0.49, 0.6, 0.74, 0.88,
 McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
   19, 20, 21, 22, 23, 24, 25, 26]
 
-TransportBlockSizeTable = [16, 24, 32, 40, 56, 72, 88, 104, 120, 136, 144, 176, 208, 224, 256, 280, 328, 336, 376, 408, 440, 488, 520, 552, 584, 616, 712]
-
+TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
 take_avg = 1000
 counter_avg = 0
 

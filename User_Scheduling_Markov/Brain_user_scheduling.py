@@ -212,10 +212,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_3tti.pkl")
+        self.q_table.to_pickle("qtable_SU_example_4tti_50RB.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_4tti_50RB.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:

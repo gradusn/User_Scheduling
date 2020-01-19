@@ -89,9 +89,9 @@ def test():
     timer_tti = 0
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_simple_2tti_pf" + str(
+        string_pf = "q_learning_SU_simple_4tti_pf_50RB" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_2tti_rl" + str(
+        string_rl = "q_learning_SU_simple_4tti_rl_50RB" + str(
             iter) + ".csv"
 
         for episode in range(max_test):
