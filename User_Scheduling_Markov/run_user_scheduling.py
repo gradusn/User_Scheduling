@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 5000000
+max_episodes = 8000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -89,9 +89,9 @@ def test():
     timer_tti = 0
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_simple_4tti_pf_50RB" + str(
+        string_pf = "q_learning_SU_simple_4tti_pf_50RB_diff_gains" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_4tti_rl_50RB" + str(
+        string_rl = "q_learning_SU_simple_4tti_rl_50RB_diff_gains" + str(
             iter) + ".csv"
 
         for episode in range(max_test):
@@ -201,8 +201,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

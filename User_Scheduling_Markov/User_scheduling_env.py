@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 4
+max_time_slots = 2
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -39,7 +39,12 @@ algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain0 = {'G': [15, 15], 'B': [5, 5]}
+gain0 = {'G': [15, 15], 'B': [9, 9]}
+gain1 = {'G': [13, 13], 'B': [6, 6]}
+gain2 = {'G': [11, 11], 'B': [3, 3]}
+
+gain = [gain0, gain1, gain2]
+
 
 
 channelmatrix = [[]]
@@ -64,8 +69,8 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 4
-time_window_test = 4
+time_window = 2
+time_window_test = 2
 diff = []
 metric_rl = []
 metric_pf = []
@@ -131,7 +136,7 @@ class UserScheduling(object):
 
         gain_array = state[1].split()
         for i in range(0, n_UEs):
-            scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
+            scalar_gain_array.append(np.random.choice(gain[i][gain_array[i]]))
 
     def step(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
@@ -151,6 +156,7 @@ class UserScheduling(object):
 
         array = list(np.arange(n_UEs))
         array.remove(action)
+        
         if (timer_tti == 1):
             ues_thr_rl[action] = thr_rl
         else:
