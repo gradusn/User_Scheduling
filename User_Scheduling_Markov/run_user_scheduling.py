@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 8000000
+max_episodes = 5000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -86,12 +86,16 @@ def test():
     start_state = 'G G G'
     channels = env.create_channel(start_state)
     observation = env.reset(channels)
+    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
     timer_tti = 0
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_simple_4tti_pf_50RB_diff_gains" + str(
+        string_pf = "q_learning_SU_simple_3tti_pf_50RB_diff_gains_win_diff" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_4tti_rl_50RB_diff_gains" + str(
+        string_rl = "q_learning_SU_simple_3ti_rl_50RB_diff_gains_large_win" + str(
+            iter) + ".csv"
+        string_pf_short = "q_learning_SU_simple_3tti_pf_50RB_diff_gains_short" + str(
             iter) + ".csv"
 
         for episode in range(max_test):
@@ -116,7 +120,11 @@ def test():
             thr.close()
         with open(string_pf, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.mean_pf)
+            thr_csv.writerow(User_scheduling_env.metric_pf)
+            thr.close()
+        with open(string_pf_short, "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(User_scheduling_env.metric_pf_short)
             thr.close()
         User_scheduling_env.diff = []
 
