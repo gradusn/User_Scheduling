@@ -70,7 +70,7 @@ best_action = 0
 old_optimal_action = []
 old_action = []
 time_window = 3
-time_window_short = 3
+time_window_short = 10
 time_window_large = 1000
 time_window_test = 3
 diff = []
@@ -96,7 +96,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
   19, 20, 21, 22, 23, 24, 25, 26]
 
 TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
-take_avg = 1000
+take_avg = 2000
 counter_avg = 0
 
 class UserScheduling(object):
@@ -218,6 +218,8 @@ class UserScheduling(object):
         ues_thr_ri_ti_global = tmp_thr_optimal
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
 
+
+
         if timer_tti == time_window_test:
             done = True
             s_ = self.reset(channels)
@@ -228,25 +230,29 @@ class UserScheduling(object):
 
             metric_rl.append(reward)
 
-            if (counter_avg == take_avg):
-                counter_avg = 0
-                mean_rl.append(np.mean(metric_rl))
-                reward_optimal = 0
-                for i in range(0, len(tmp_thr_optimal)):
-                    reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
-                metric_pf.append(reward_optimal)
-
-                reward_optimal_short = 0
-                for i in range(0, len(tmp_thr_optimal_short)):
-                    reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
-                metric_pf_short.append(reward_optimal_short)
-
-            counter_avg = counter_avg + 1
-
-
         else:
             done = False
             s_ = np.array([ues_thr_rl, channels], dtype=object)
+
+        if (counter_avg == take_avg):
+            counter_avg = 0
+            mean_rl.append(np.mean(metric_rl))
+            reward_optimal = 0
+            for i in range(0, len(tmp_thr_optimal)):
+                reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
+            metric_pf.append(reward_optimal)
+
+            reward_optimal_short = 0
+            for i in range(0, len(tmp_thr_optimal_short)):
+                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
+            metric_pf_short.append(reward_optimal_short)
+
+
+
+        counter_avg = counter_avg + 1
+
+
+
 
         return s_, next_channel_state, done
 

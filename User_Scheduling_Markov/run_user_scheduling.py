@@ -91,11 +91,11 @@ def test():
     timer_tti = 0
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_simple_3tti_pf_50RB_diff_gains_win_diff" + str(
+        string_pf = "q_learning_SU_simple_tti_pf_50RB_win1000_Every2000_" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_3ti_rl_50RB_diff_gains_large_win" + str(
+        string_rl = "q_learning_SU_simple_3ti_rl_50RB_win3_Every2000_" + str(
             iter) + ".csv"
-        string_pf_short = "q_learning_SU_simple_3tti_pf_50RB_diff_gains_short" + str(
+        string_pf_short = "q_learning_SU_simple_tti_pf_50RB_win10_Every2000_" + str(
             iter) + ".csv"
 
         for episode in range(max_test):
@@ -209,8 +209,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

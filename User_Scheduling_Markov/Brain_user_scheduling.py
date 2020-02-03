@@ -215,7 +215,7 @@ class QLearningTable:
         self.q_table.to_pickle("qtable_SU_example_3tti_50RB_different_Gains_thrfix.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_3tti_50RB_different_Gains_fixed_bug_thr.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_3tti_50RB_different_Gains_thrfix.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
