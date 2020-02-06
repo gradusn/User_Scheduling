@@ -192,13 +192,13 @@ class QLearningTable:
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
         self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[s, a]
-        '''
+
         if (timer_tti < User_scheduling_env.max_time_slots):
             q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
         else:
             q_target = r   # next state is terminal
-        '''
-        q_target = r + self.gamma * self.q_table.loc[s_, :].max()
+
+        #q_target = r + self.gamma * self.q_table.loc[s_, :].max()
 
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
         '''
@@ -212,10 +212,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_3tti_50RB_different_Gains_thrfix.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_simple_test.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_3tti_50RB_different_Gains_thrfix.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_simple_test.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:

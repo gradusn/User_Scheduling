@@ -33,13 +33,13 @@ n_UEs = 3
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
-property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
+property_to_probability2 = {'G': [0, 1], 'B': [1, 0]}
+property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 
 corr_probability = 0.8
 
-max_episodes = 5000000
+max_episodes = 20000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -52,11 +52,10 @@ def update():
     start_state = 'G G G'
     channels = env.create_channel(start_state)
     observation = env.reset(channels)
-    timer_tti = 0
+    timer_tti = 1
     for episode in range(max_episodes):
         print("train " + str(episode))
 
-        timer_tti += 1
 
         # RL choose action based on observation
         action = RL.choose_action(str(observation), timer_tti)
@@ -72,8 +71,12 @@ def update():
 
         observation = observation_
 
+        timer_tti += 1
+
+
         if done:
-            timer_tti = 0
+            timer_tti = 1
+
 
     # end of game
     RL.save_table()
@@ -88,8 +91,8 @@ def test():
     observation = env.reset(channels)
     User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
-    timer_tti = 0
-    RL.load_table()
+    timer_tti = 1
+    #RL.load_table()
     for iter in range(0, 1):
         string_pf = "q_learning_SU_simple_tti_pf_50RB_win1000_Every2000_" + str(
             iter) + ".csv"
@@ -101,7 +104,6 @@ def test():
         for episode in range(max_test):
             print("test " + str(episode))
 
-            timer_tti += 1
 
             action = RL.choose_action_test(str(observation))
             observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
@@ -109,8 +111,11 @@ def test():
             # swap observation
             observation = observation_
 
+            timer_tti += 1
+
+
             if done:
-                timer_tti = 0
+                timer_tti = 1
 
         print('testing ' + str(iter) + ' over')
 
@@ -209,8 +214,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

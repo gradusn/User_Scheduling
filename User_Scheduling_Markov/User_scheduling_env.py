@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 3
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -69,10 +69,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 3
+time_window = 10
 time_window_short = 10
 time_window_large = 1000
-time_window_test = 3
+time_window_test = 10
 diff = []
 metric_rl = []
 metric_pf = []
@@ -96,7 +96,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
   19, 20, 21, 22, 23, 24, 25, 26]
 
 TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
-take_avg = 2000
+take_avg = 10
 counter_avg = 0
 
 class UserScheduling(object):
@@ -173,10 +173,16 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-        next_channel_state = channel_chain.next_state(state)
-        channels = self.create_channel(next_channel_state)
+        if(timer_tti%3 == 0):
+            next_channel_state = 'G G G'
+            channels = self.create_channel(next_channel_state)
+        else:
+            next_channel_state = channel_chain.next_state(state)
+            channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots:
+            next_channel_state = 'G G G'
+            channels = self.create_channel(next_channel_state)
             s_ = self.reset(channels)
             done = True
 
@@ -212,15 +218,19 @@ class UserScheduling(object):
         else:
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
-        next_channel_state = channel_chain.next_state(state)
-        channels = self.create_channel(next_channel_state)
+        if (timer_tti % 3 == 0):
+            next_channel_state = 'G G G'
+            channels = self.create_channel(next_channel_state)
+        else:
+            next_channel_state = channel_chain.next_state(state)
+            channels = self.create_channel(next_channel_state)
 
         ues_thr_ri_ti_global = tmp_thr_optimal
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
 
-
-
         if timer_tti == time_window_test:
+            next_channel_state = 'G G G'
+            channels = self.create_channel(next_channel_state)
             done = True
             s_ = self.reset(channels)
 
@@ -234,7 +244,7 @@ class UserScheduling(object):
             done = False
             s_ = np.array([ues_thr_rl, channels], dtype=object)
 
-        if (counter_avg == take_avg):
+        if (counter_avg == take_avg-1):
             counter_avg = 0
             mean_rl.append(np.mean(metric_rl))
             reward_optimal = 0
@@ -244,6 +254,7 @@ class UserScheduling(object):
 
             reward_optimal_short = 0
             for i in range(0, len(tmp_thr_optimal_short)):
+                print(str())
                 reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
             metric_pf_short.append(reward_optimal_short)
 
