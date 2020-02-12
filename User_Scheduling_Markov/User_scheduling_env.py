@@ -26,7 +26,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 3
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -69,10 +69,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 3
-time_window_short = 3
+time_window = 10
+time_window_short = 10
 time_window_large = 1000
-time_window_test = 3
+time_window_test = 10
 diff = []
 metric_rl = []
 metric_pf = []
@@ -217,6 +217,19 @@ class UserScheduling(object):
 
         ues_thr_ri_ti_global = tmp_thr_optimal
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
+        counter_avg = counter_avg + 1
+        if (counter_avg == take_avg):
+            counter_avg = 0
+            mean_rl.append(np.mean(metric_rl))
+            reward_optimal = 0
+            for i in range(0, len(tmp_thr_optimal)):
+                reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
+            metric_pf.append(reward_optimal)
+
+            reward_optimal_short = 0
+            for i in range(0, len(tmp_thr_optimal_short)):
+                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
+            metric_pf_short.append(reward_optimal_short)
 
         if timer_tti == time_window_test:
             done = True
@@ -228,20 +241,8 @@ class UserScheduling(object):
 
             metric_rl.append(reward)
 
-            if (counter_avg == take_avg):
-                counter_avg = 0
-                mean_rl.append(np.mean(metric_rl))
-                reward_optimal = 0
-                for i in range(0, len(tmp_thr_optimal)):
-                    reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
-                metric_pf.append(reward_optimal)
 
-                reward_optimal_short = 0
-                for i in range(0, len(tmp_thr_optimal_short)):
-                    reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
-                metric_pf_short.append(reward_optimal_short)
 
-            counter_avg = counter_avg + 1
 
 
         else:
