@@ -106,6 +106,8 @@ TransportBlockSizeTable_simple = [1384, 1800, 2216, 2856, 5000, 4392, 7000, 6200
 take_avg = 10
 counter_avg = 0
 
+Throughputs = []
+
 class UserScheduling(object):
     def __init__(self):
         super(UserScheduling, self).__init__()
@@ -125,10 +127,10 @@ class UserScheduling(object):
 
 
     def reset(self, channel_state):
-
-        #array = np.full((1,n_UEs),0.00001, dtype=float)
-        array_slots = np.full((1,n_UEs),0.00001, dtype=float)
-        observations = np.array([array, channel_state], dtype=object)
+        global Throughputs
+        Throughputs = np.full((1,n_UEs), 0.00001, dtype=float)
+        array_slots = np.full((1,n_UEs), 0, dtype=float)
+        observations = np.array([array_slots, channel_state], dtype=object)
         global ues_thr_random_global
         global ues_thr_ri_ti_global_short
         global ues_thr_ri_ti_global
@@ -156,12 +158,16 @@ class UserScheduling(object):
         global ues_thr_optimal_global
         global old_action
         global old_optimal_action
+        global Throughputs
         check = []
 
         R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
 
-        ues_thr_rl = copy.deepcopy(observation[0])
-        ues_thr_rl = ues_thr_rl[:3].flatten()
+        #ues_thr_rl = copy.deepcopy(observation[0])
+        #ues_thr_rl = ues_thr_rl[:3].flatten()
+        slots = copy.deepcopy(observation[0])
+        slots = slots.flatten()
+        ues_thr_rl = Throughputs[:3].flatten()
 
 
         thr_rl = R[0]*1000/1000000
@@ -172,11 +178,15 @@ class UserScheduling(object):
         for i in array:
             if (ues_thr_rl[i] != 0.00001):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
+            slots[i] += 1
+
         if (ues_thr_rl[action] == 0.00001):
             ues_thr_rl[action] = (1 / time_window) * thr_rl
         else:
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
+        slots[action] = 0
 
+        Throughputs = ues_thr_rl
         # reward function
         reward = 0
         for i in range(0, len(ues_thr_rl)):
@@ -200,7 +210,7 @@ class UserScheduling(object):
             next_channel_state = states[timer_tti]
             channels = self.create_channel(next_channel_state)
             done = False
-            s_ = np.array([ues_thr_rl, channels], dtype=object)
+            s_ = np.array([slots, channels], dtype=object)
 
         return s_, reward, next_channel_state,  done
 
