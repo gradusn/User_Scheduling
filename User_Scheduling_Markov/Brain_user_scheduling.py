@@ -21,9 +21,11 @@ import MarkovChain
 
 max_testing_episodes = 200000
 
+actions_sample = [0, 1, 0, 1, 1, 1, 1, 0, 1, 0]
+
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.1,
                  epsilon_decay=0.000001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
@@ -178,15 +180,16 @@ class QLearningTable:
 
         return action
 
-    def choose_action_test(self, observation):
+    def choose_action_test(self, observation, timer_tti):
         if observation not in self.q_table.index:
             print("No state in table")
             state_action = self.q_table.iloc[0, :]
         else:
             state_action = self.q_table.loc[observation, :]
         action = np.random.choice(state_action[state_action == np.max(state_action)].index)
-
         return action
+        #return actions_sample[timer_tti-1]
+
 
 
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
@@ -212,10 +215,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_simple_test.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_simple_test1.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_simple_test.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_simple_test1.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:

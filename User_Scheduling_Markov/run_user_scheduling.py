@@ -29,7 +29,7 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-n_UEs = 3
+n_UEs = 2
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 corr_probability = 0.8
 
-max_episodes = 20000000
+max_episodes = 5000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -48,11 +48,11 @@ max_test = 100000
 def update():
     global state_action
     global start_state
-
-    start_state = 'G G G'
+    timer_tti = 1
+    #start_state = 'G G G'
+    start_state = states_simple[timer_tti - 1]
     channels = env.create_channel(start_state)
     observation = env.reset(channels)
-    timer_tti = 1
     for episode in range(max_episodes):
         print("train " + str(episode))
 
@@ -62,7 +62,7 @@ def update():
 
 
         # RL take action and get next observation and reward
-        observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
+        observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode, states_simple)
 
         # RL learn from this transition
         RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
@@ -85,18 +85,19 @@ def update():
 def test():
     global state_action
     global start_state
+    timer_tti = 1
 
-    start_state = 'G G G'
+    #start_state = 'G G G'
+    start_state = states_simple[timer_tti - 1]
     channels = env.create_channel(start_state)
     observation = env.reset(channels)
     User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
-    timer_tti = 1
-    #RL.load_table()
+    RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_simple_tti_pf_50RB_win1000_Every2000_" + str(
+        string_pf = "q_learning_SU_simple_10tti_pf_" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_3ti_rl_50RB_win3_Every2000_" + str(
+        string_rl = "q_learning_SU_simple_10ti_rl_50RB_win10_" + str(
             iter) + ".csv"
         string_pf_short = "q_learning_SU_simple_tti_pf_50RB_win10_Every2000_" + str(
             iter) + ".csv"
@@ -104,35 +105,28 @@ def test():
         for episode in range(max_test):
             print("test " + str(episode))
 
-
-            action = RL.choose_action_test(str(observation))
-            observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
+            action = RL.choose_action_test(str(observation), timer_tti)
+            observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode, states_simple)
 
             # swap observation
             observation = observation_
 
             timer_tti += 1
 
-
             if done:
-                timer_tti = 1
+                #timer_tti = 1
+                break
 
         print('testing ' + str(iter) + ' over')
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.mean_rl)
-            thr.close()
-        with open(string_pf, "a") as thr:
-            thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.metric_pf)
+            thr_csv.writerow(User_scheduling_env.metric_rl)
             thr.close()
         with open(string_pf_short, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
             thr_csv.writerow(User_scheduling_env.metric_pf_short)
             thr.close()
-        User_scheduling_env.diff = []
-
 
 
 def test_markov():
@@ -177,15 +171,6 @@ def Create_transtion_matrix(states):
     return transition_matrix
 
 
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
 
 
@@ -201,6 +186,18 @@ if __name__ == "__main__":
               'B B B'
               ]
 
+    states_simple = ['G2 G2',
+              'B G0',
+              'G0 G0',
+              'G0 G3',
+              'B B',
+              'G0 B',
+              'G1 G4',
+              'G2 G1',
+              'G0 B',
+              'G2 G3'
+              ]
+
 
 
     #corr = ['GB', 'BG', 'BB']
@@ -214,8 +211,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

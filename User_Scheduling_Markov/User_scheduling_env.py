@@ -30,26 +30,31 @@ max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 3
+n_UEs = 2
 comb = combinations(np.arange(n_UEs), 2)
-action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
+#action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
 algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain0 = {'G': [15, 15], 'B': [9, 9]}
-gain1 = {'G': [13, 13], 'B': [6, 6]}
-gain2 = {'G': [11, 11], 'B': [3, 3]}
+#gain0 = {'G': [15, 15], 'B': [9, 9]}
+#gain1 = {'G': [13, 13], 'B': [6, 6]}
+#gain2 = {'G': [11, 11], 'B': [3, 3]}
 
-gain = [gain0, gain1, gain2]
+gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
+gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
+
+#gain = [gain0, gain1, gain2]
+gain = [gain0, gain1]
 
 
 
 channelmatrix = [[]]
 
-n_actions = binomial(n_UEs, 2)
+#n_actions = binomial(3, 2)
+n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -96,6 +101,8 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
   19, 20, 21, 22, 23, 24, 25, 26]
 
 TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
+TransportBlockSizeTable_simple = [1384, 1800, 2216, 2856, 5000, 4392, 7000, 6200, 6968, 10000, 8760, 12000, 11448, 14000, 15000, 16000, 17000, 18336, 19000, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 27000]
+
 take_avg = 10
 counter_avg = 0
 
@@ -141,7 +148,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(np.random.choice(gain[i][gain_array[i]]))
 
-    def step(self, action, observation, state, timer_tti, channel_chain, episode):
+    def step(self, action, observation, state, timer_tti, channel_chain, episode, states):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -172,27 +179,30 @@ class UserScheduling(object):
         reward = 0
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
-
+        '''
         if(timer_tti%3 == 0):
             next_channel_state = 'G G G'
             channels = self.create_channel(next_channel_state)
         else:
             next_channel_state = channel_chain.next_state(state)
             channels = self.create_channel(next_channel_state)
+        '''
 
         if timer_tti == max_time_slots:
-            next_channel_state = 'G G G'
+            next_channel_state = states[0]
             channels = self.create_channel(next_channel_state)
             s_ = self.reset(channels)
             done = True
 
         else:
+            next_channel_state = states[timer_tti]
+            channels = self.create_channel(next_channel_state)
             done = False
             s_ = np.array([ues_thr_rl, channels], dtype=object)
 
         return s_, reward, next_channel_state,  done
 
-    def step_test(self, action, observation, state, timer_tti, channel_chain, episode):
+    def step_test(self, action, observation, state, timer_tti, channel_chain, episode, states_simple):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_ri_ti_global_short
@@ -218,52 +228,32 @@ class UserScheduling(object):
         else:
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
-        if (timer_tti % 3 == 0):
-            next_channel_state = 'G G G'
-            channels = self.create_channel(next_channel_state)
-        else:
-            next_channel_state = channel_chain.next_state(state)
-            channels = self.create_channel(next_channel_state)
-
         ues_thr_ri_ti_global = tmp_thr_optimal
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
 
+        reward = 0
+        for i in range(0, len(ues_thr_rl)):
+            reward = reward + float(np.log2(ues_thr_rl[i]))
+
+        metric_rl.append(reward)
+
+        reward_optimal_short = 0
+        for i in range(0, len(tmp_thr_optimal_short)):
+            reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
+
+        metric_pf_short.append(reward_optimal_short)
+
         if timer_tti == time_window_test:
-            next_channel_state = 'G G G'
-            channels = self.create_channel(next_channel_state)
             done = True
+            next_channel_state = states_simple[0]
+            channels = self.create_channel(next_channel_state)
             s_ = self.reset(channels)
 
-            reward = 0
-            for i in range(0, len(ues_thr_rl)):
-                reward = reward + float(np.log2(ues_thr_rl[i]))
-
-            metric_rl.append(reward)
-
         else:
+            next_channel_state = states_simple[timer_tti]
+            channels = self.create_channel(next_channel_state)
             done = False
             s_ = np.array([ues_thr_rl, channels], dtype=object)
-
-        if (counter_avg == take_avg-1):
-            counter_avg = 0
-            mean_rl.append(np.mean(metric_rl))
-            reward_optimal = 0
-            for i in range(0, len(tmp_thr_optimal)):
-                reward_optimal = reward_optimal + float(np.log2(tmp_thr_optimal[i]))
-            metric_pf.append(reward_optimal)
-
-            reward_optimal_short = 0
-            for i in range(0, len(tmp_thr_optimal_short)):
-                print(str())
-                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
-            metric_pf_short.append(reward_optimal_short)
-
-
-
-        counter_avg = counter_avg + 1
-
-
-
 
         return s_, next_channel_state, done
 
@@ -297,9 +287,10 @@ class UserScheduling(object):
         max_ri_ti_action = 0
         for action in actions_array:
             UE_1 = action
-            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
-            iTbs = McsToItbsDl[MCS]
-            rates.append(TransportBlockSizeTable[iTbs])
+            #MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            #iTbs = McsToItbsDl[MCS]
+            #rates.append(TransportBlockSizeTable[iTbs])
+            rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
             if option == 'test':
                 ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_3_win = copy.deepcopy(ues_thr_ri_ti_global_short).flatten()
