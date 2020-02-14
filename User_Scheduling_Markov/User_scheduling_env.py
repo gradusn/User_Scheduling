@@ -125,7 +125,9 @@ class UserScheduling(object):
 
 
     def reset(self, channel_state):
-        array = np.full((1,n_UEs),0.00001, dtype=float)
+
+        #array = np.full((1,n_UEs),0.00001, dtype=float)
+        array_slots = np.full((1,n_UEs),0.00001, dtype=float)
         observations = np.array([array, channel_state], dtype=object)
         global ues_thr_random_global
         global ues_thr_ri_ti_global_short
