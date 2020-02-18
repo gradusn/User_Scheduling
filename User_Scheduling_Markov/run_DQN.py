@@ -4,6 +4,8 @@ import enviroment_DQN
 import numpy as np
 import csv
 
+from MarkovChain import MarkovChain
+
 
 
 import seaborn as sns
@@ -15,10 +17,12 @@ state_action = []
 
 alpha_GB = 0.9
 beta_GB = 0.9
-property_to_probablity = {'G': [alpha_GB, 1-alpha_GB], 'B': [beta_GB, 1 - beta_GB]}
-corr_probability = 0.8
+property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
+property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
+n_UEs = 2
 
-max_episodes = 120000000
+max_episodes = 15000000
 max_test = 500000
 
 def update():
@@ -26,36 +30,35 @@ def update():
     global state_action
     global start_state
 
+    timer_tti = 0
+    start_state = 'G G'
+    start_state_snr = env.create_channel(start_state)
+    observation = env.reset(start_state_snr)
 
     for episode in range(max_episodes):
-        timer_tti = 0
-
-        start_state = env.create_rayleigh_fading()
-        observation = env.reset(start_state)
-
         print("train " + str(episode))
 
-        while True:
-            timer_tti += 1
+        timer_tti += 1
 
-            # RL choose action based on observation
-            action = RL.choose_action(observation)
-            # RL take action and get next observation and reward
-            observation_, reward, done = env.step(action, observation, start_state, episode, timer_tti)
+        # RL choose action based on observation
+        action = RL.choose_action(observation)
+        # RL take action and get next observation and reward
+        observation_, reward, done, next_channel_state = env.step(action, observation, start_state, episode, timer_tti, channel_chain)
 
-            RL.store_transition(observation, action, reward, observation_)
+        RL.store_transition(observation, action, reward, observation_)
 
-            if (step > 200) and (step % 5 == 0):
-                 RL.learn(episode, max_episodes, timer_tti)
+        if (step > 200) and (step % 5 == 0):
+            RL.learn(episode, max_episodes, timer_tti)
 
-            # swap observation
-            observation = observation_
+        # swap observation
+        observation = observation_
+        start_state = next_channel_state
 
-            # break while loop when end of this episode
-            step += 1
+        # break while loop when end of this episode
+        step += 1
 
-            if done:
-                break
+        if done:
+            timer_tti = 0
 
     # end of game
     RL.save_mode()
@@ -64,38 +67,46 @@ def update():
 def test():
     global state_action
     global start_state
+
+    timer_tti = 0
+    start_state = 'G G'
+    start_state_snr = env.create_channel(start_state)
+    observation = env.reset(start_state_snr)
     RL.load_model()
+    enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
 
     for iter in range(0,1):
-        string = "Log_Thr_NN_model_3_ues_SU_DQN_10_tti_10_timeScale_1051rays" + str(iter) + ".csv"
-
+        string_pf = "q_learning_SU_simple_10tti_pf_50RB_diff_gains_win10" + str(
+            iter) + ".csv"
+        string_rl = "q_learning_SU_simple_10tti_rl_mean" + str(
+            iter) + ".csv"
         for episode in range(max_test):
-            timer_tti = 0
 
-            start_state = env.create_rayleigh_fading()
-            observation = env.reset(start_state)
+            timer_tti += 1
+            print("test " + str(episode))
+            # RL choose action based on observation
+            action = RL.choose_action_test(observation)
 
-            while True:
-                timer_tti += 1
-                print("test " + str(episode))
-                # RL choose action based on observation
-                action = RL.choose_action_test(observation)
+            # RL take action and get next observation and reward
+            observation_, done, next_channel_state = env.step_test(action, observation, start_state, episode, timer_tti, channel_chain)
 
-                # RL take action and get next observation and reward
-                observation_, done = env.step_test(action, observation, start_state, episode, timer_tti)
+            # swap observation
+            observation = observation_
+            start_state = next_channel_state
 
-                # swap observation
-                observation = observation_
-
-                if done:
-                    break
+            if done:
+                timer_tti = 0
+                enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
 
         print('testing ' + str(iter) + ' over')
-        with open(string, "a") as thr:
+        with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(enviroment_DQN.diff)
+            thr_csv.writerow(enviroment_DQN.mean_rl)
             thr.close()
-        enviroment_DQN.diff = []
+        with open(string_pf, "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(enviroment_DQN.mean_pf)
+            thr.close()
 
 
 
@@ -119,26 +130,45 @@ def plot():
     plt.ylabel("Number of Observations")
     plt.show()
 
+def Create_transtion_matrix(states):
+    global property_to_probability1
+    global property_to_probability2
+    global property_to_probability3
+
+
+    global_transition = [property_to_probability1, property_to_probability2]
+    transition_matrix = []
+    row_transition_matrix = []
+    probability = 1
+    for i in states:
+        row_transition_matrix = []
+        for j in states:
+            probability = 1
+            channels_1 = i.split()
+            channels_2 = j.split()
+            for k in range(0, len(channels_1)):
+                if channels_1[k] == channels_2[k]:
+                    probability = probability * global_transition[k][channels_1[k]][0]
+                else:
+                    probability = probability * global_transition[k][channels_1[k]][1]
+            row_transition_matrix.append(probability)
+        transition_matrix.append(row_transition_matrix)
+
+    return transition_matrix
+
 
 if __name__ == "__main__":
-    plot()
+    states_2_ues = ['G G',
+                    'G B',
+                    'B G',
+                    'B B',
+                    ]
 
-    meanvalue = 10
-    modevalue = np.sqrt(2 / np.pi) * meanvalue
+    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
+    channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
+                                states=states_2_ues)
 
-    meanvalue1 = 5
-    modevalue1 = np.sqrt(2 / np.pi) * meanvalue1
-
-    meanvalue2 = 1
-    modevalue2 = np.sqrt(2 / np.pi) * meanvalue2
-
-    (n, bins0, patches) = hist(np.random.rayleigh(modevalue, 50000000), bins=16)
-    (n1, bins1, patches1) = hist(np.random.rayleigh(modevalue1, 50000000), bins=16)
-    (n2, bins2, patches2) = hist(np.random.rayleigh(modevalue2, 50000000), bins=16)
-
-    #bins = [bins0, bins1, bins2]
-
-    env = UserScheduling(modevalue, modevalue1, modevalue2, bins0)
+    env = UserScheduling()
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
@@ -150,7 +180,7 @@ if __name__ == "__main__":
                       )
 
     #update()
-    #test()
+    test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

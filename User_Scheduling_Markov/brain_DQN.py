@@ -28,7 +28,7 @@ class DeepQNetwork:
             e_greedy=0.9,
             minimum_epsilon=0.1,
             max_epsilon=1.0,
-            epsilon_decay=0.0000001,
+            epsilon_decay=0.000001,
             replace_target_iter=500,
             memory_size=1000,
             batch_size=32,
@@ -166,10 +166,9 @@ class DeepQNetwork:
         self.cost_his.append(cost)
 
         # increasing epsilon
-        if timer_tti == enviroment_DQN.max_time_slots:
-            self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
-                -self.epsilon_decay * episode)
-            print(self.epsilon)
+        self.epsilon = self.minimum_epsilon + (self.max_epsilon - self.minimum_epsilon) * np.exp(
+            -self.epsilon_decay * episode)
+        print(self.epsilon)
         self.learn_step_counter += 1
 
     def save_mode(self):
@@ -177,12 +176,12 @@ class DeepQNetwork:
         tvars_vals = self.sess.run(w)
         print(tvars_vals)
 
-        save_path = self.saver.save(self.sess, "model_3_ues_limit5_thr_win5.ckpt")
+        save_path = self.saver.save(self.sess, "model_2_ues_gb_SU_reset_channels_5tti.ckpt")
 
 
 
     def load_model(self):
-        self.saver.restore(self.sess, "model_3_ues_SU_DQN_10_tti_10ts_1051ray.ckpt")
+        self.saver.restore(self.sess, "model_2_ues_gb_SU_reset_channels_5tti.ckpt")
         print("Model restored")
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)

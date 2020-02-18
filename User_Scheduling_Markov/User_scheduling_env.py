@@ -26,27 +26,29 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 2
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 3
+n_UEs = 2
 n_Tx = 2
 comb = combinations(np.arange(n_UEs), 2)
-action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
+#action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
 algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain = {'G': [3, 3], 'B': [0.5, 0.5]}
-
+gain0 = {'G': [15, 15], 'B': [9, 9]}
+gain1 = {'G': [13, 13], 'B': [3, 3]}
+gain = [gain0, gain1]
 channelmatrix = [[]]
 
 H = []
 
-n_actions = binomial(n_UEs, 2)
+#n_actions = binomial(n_UEs, 2)
+n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -57,7 +59,7 @@ angles = []
 
 ues_thr_random_global = []
 ues_thr_optimal_global = []
-ues_thr_ri_ti_global = []
+ues_thr_ri_ti_global_short = []
 
 scalar_gain_array = []
 
@@ -74,6 +76,23 @@ modevalue1 = 0
 modevalue2 = 0
 gains = []
 
+Max_Cqi = 16
+Ues_Cqi = []
+
+SpectralEfficiencyForCqi = [0.0, 0.15, 0.23, 0.38, 0.6, 0.88, 1.18, 1.48, 1.91, 2.41, 2.73, 3.32, 3.9, 4.52, 5.12, 5.55]
+
+SpectralEfficiencyForMcs = [0.15, 0.19, 0.23, 0.31, 0.38, 0.49, 0.6, 0.74, 0.88, 1.03, 1.18,
+  1.33, 1.48, 1.7, 1.91, 2.16, 2.41, 2.57,
+  2.73, 3.03, 3.32, 3.61, 3.9, 4.21, 4.52, 4.82, 5.12, 5.33, 5.55,
+  0, 0, 0]
+
+
+McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
+  19, 20, 21, 22, 23, 24, 25, 26]
+
+TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
+time_window = 10
+time_window_short = 10
 
 class UserScheduling(object):
     def __init__(self, value0, value1, value2, gains_dict):
@@ -94,20 +113,14 @@ class UserScheduling(object):
         # self.title('User_scheduling')
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
-    def create_channel(self, channels_gain, channels_corr):
-        return str(channels_gain)+str("_")+str(channels_corr)
+    def create_channel(self, channels_gain):
+        return str(channels_gain)
 
 
 
     def reset(self, channel_state):
-        array = np.ones((n_UEs,), dtype=float)
+        array = np.full((1,n_UEs), 0.00001, dtype=float)
         observations = np.array([array, channel_state], dtype=object)
-        global ues_thr_random_global
-        global ues_thr_optimal_global
-        global ues_thr_ri_ti_global
-        ues_thr_random_global = np.ones((n_UEs,), dtype=float)
-        ues_thr_optimal_global = np.ones((n_UEs,), dtype=float)
-        ues_thr_ri_ti_global = np.ones((n_UEs,), dtype=float)
         return observations
 
     def init_for_test(self):
@@ -163,7 +176,7 @@ class UserScheduling(object):
         H = np.array(H)
         bins_corr = self.find_angles()
         return bins_corr
-
+    '''
     def find_angles(self):
         global angles
         angles = []
@@ -184,7 +197,7 @@ class UserScheduling(object):
         cut_bins = [0, 30, 60, 90, 120, 150, 180]
         binned = pd.cut(angles, bins=cut_bins, labels=cut_labels_6)
         return str(binned[0]+binned[1]+binned[2])
-
+    '''
     def gains(self, state):
         state = state[1]
         gain_array = state.split("_")[0].split()
@@ -193,28 +206,11 @@ class UserScheduling(object):
 
     def mapstatetovectors(self, state):
 
-        state = state[1]
-        corr = state.split("_")[1]
-
-        global channelmatrix
-        ind = np.random.choice([0, 1])
-        ind_1 = ind ^ 1
-        ind_2 = 2
-        if corr != 'BB':
-            if corr == 'GB':
-                channel_matrix = channel_vectors[[ind, ind_1, ind_2], :]
-            else:
-                channel_matrix = channel_vectors[[ind, ind_2, ind_1], :]
-        else:
-            channel_matrix = channel_vectors[[ind_2, ind, ind_1], :]
-
-        channelmatrix = channel_matrix
-
-        gain_array = state.split("_")[0].split()
+        gain_array = state[1].split()
         for i in range(0, n_UEs):
-            scalar_gain_array.append(np.random.choice(gain[gain_array[i]]))
+            scalar_gain_array.append(np.random.choice(gain[i][gain_array[i]]))
 
-    def step(self, action, observation, corr_chain, state, timer_tti, channel_chain, episode, option):
+    def step(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -223,68 +219,43 @@ class UserScheduling(object):
         check = []
 
         s_ = copy.deepcopy(observation)
-        R, tmp_thr_optimal, optimal_action = self.get_rates(observation, action, option)
-        #old_optimal_action.append(optimal_action)
-        #old_action.append(action)
+        R, tmp_thr_optimal, optimal_action = self.get_rates(observation, action, 'train')
 
-        ues_thr_rl = copy.deepcopy(s_[0])
+        ues_thr_rl = copy.deepcopy(observation[0])
+        ues_thr_rl = ues_thr_rl[:3].flatten()
+        thr_rl = R[0]*1000/1000000
 
-        thr_rl = R[0]
+        array = list(np.arange(n_UEs))
+        array.remove(action)
 
-        ues_thr_rl[action_to_ues_tbl[action][0]] += thr_rl[0]
-        ues_thr_rl[action_to_ues_tbl[action][1]] += thr_rl[1]
+        for i in array:
+            if (ues_thr_rl[i] != 0.00001):
+                ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
+        if (ues_thr_rl[action] == 0.00001):
+            ues_thr_rl[action] = (1 / time_window) * thr_rl
+        else:
+            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
-        # reward function
+         # reward function
         reward = 0
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
-
-
+        next_channel_state = channel_chain.next_state(state)
+        channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots:
             done = True
-            '''
-            optimal_sum_log = 0
-            for i in range(0, len(tmp_thr_optimal)):
-                optimal_sum_log = optimal_sum_log + float(np.log2(tmp_thr_optimal[i]))
-            '''
-            '''
-            with open("reward_sum_log_3_tti.csv", "a") as reward_sum_log:
-                reward_sum_log_csv = csv.writer(reward_sum_log, dialect='excel')
-                reward_sum_log_csv.writerow([reward])
-                reward_sum_log.close()
-            with open("optimal_sum_log_3_tti.csv", "a") as optimal_log:
-                optimal_sum_log_csv = csv.writer(optimal_log, dialect='excel')
-                optimal_sum_log_csv.writerow([optimal_sum_log])
-                optimal_log.close()
-
-            if reward > optimal_sum_log:
-                check.append([reward, optimal_sum_log, observation[1], observation_old[1], episode, best_action, old_optimal_action, old_action, state_action, state_action_old])
-                with open("reward_vs_optimal_sum_log_3_tti.csv", "a") as sum_log:
-                    sum_log_csv = csv.writer(sum_log, dialect='excel')
-                    sum_log_csv.writerow(check)
-                    sum_log.close()
-
-                old_optimal_action = []
-                old_action = []
-            '''
+            s_ = self.reset(channels)
         else:
             done = False
-            #ues_thr_optimal_global = tmp_thr_optimal
-        #next_channel_state = channel_chain.next_state(state)
-        next_channel_state = self.create_rayleigh_fading()
-        channes_guass_corr = self.create_guass_vectors()
-        channels = self.create_channel(next_channel_state, channes_guass_corr)
-        s_ = np.array([ues_thr_rl, channels], dtype=object)
+            s_ = np.array([ues_thr_rl, channels], dtype=object)
 
         return s_, reward, next_channel_state,  done
 
     def get_rates(self, observation, action_rl, option):
         global scalar_gain_array
-        #scalar_gain_array = []
-        #self.create_guass_vectors()
-        #self.gains(observation)
-        #self.mapstatetovectors(observation)
+        scalar_gain_array = []
+        self.mapstatetovectors(observation)
         global gain
         actions = np.arange(n_UEs)
         if option == 'train':
@@ -297,7 +268,7 @@ class UserScheduling(object):
 
     def find_action(self, observation, actions_array, option):
         max_sum_log = 0
-        max_ri_ti = 0
+        max_ri_ti_short = 0
         rates = []
         global gain
         global ues_thr_optimal_global
@@ -308,131 +279,39 @@ class UserScheduling(object):
         max_action = 0
         max_ri_ti_action = 0
         for action in actions_array:
-            UE_1 = action_to_ues_tbl[action][0]
-            UE_2 = action_to_ues_tbl[action][1]
-            scalar_gain = [scalar_gain_array[UE_1], scalar_gain_array[UE_2]]
-            channelmatrix_users = copy.deepcopy(H)
-            channelmatrix_users = channelmatrix_users[[UE_1, UE_2], :]
-            h_inv = np.linalg.pinv(channelmatrix_users)
-            h_inv_tra = np.transpose(h_inv)
-            # Normalizing the inverse channel matrix
-
-            h_inv_tra[0] = h_inv_tra[0] / np.sqrt(np.power(np.absolute(h_inv_tra[0][0]),2)+np.power(np.absolute(h_inv_tra[0][1]),2)+np.power(np.absolute(h_inv_tra[0][2]),2)+np.power(np.absolute(h_inv_tra[0][3]),2))
-            h_inv_tra[1] = h_inv_tra[1] / np.sqrt(np.power(np.absolute(h_inv_tra[1][0]),2)+np.power(np.absolute(h_inv_tra[1][1]),2)+np.power(np.absolute(h_inv_tra[1][2]),2)+np.power(np.absolute(h_inv_tra[1][3]),2))
-            S = []
-            N = []
-            sum = 0
-            SINR = []
-            R = []
-
-            #v1 = []
-
-            #t = complex(1,1)
-            #t2 = complex(-1,0)
-            #v1 = [t, t2]
-            #v3 = [t.real,complex(0,t.imag),t2.real,complex(0,t2.imag)]
-            #v1 = v1 / np.sqrt(np.power(np.absolute(v1[0]),2)+np.power(np.absolute(v1[1]),2))
-            #v3 = v3 / np.sqrt(np.power(np.absolute(v3[0]),2)+np.power(np.absolute(v3[1]),2)+np.power(np.absolute(v3[2]),2)+np.power(np.absolute(v3[3]),2))
-
-            #print(v3)
-
-            #norm = np.sqrt(np.vdot(v1[0],v1[0])+np.vdot(v1[1],v1[1]))
-            #norm2 = np.sqrt(np.vdot(v3[0],v3[0])+np.vdot(v3[1],v3[1])+np.vdot(v3[2],v3[2])+np.vdot(v3[3],v3[3]))
-
-
-            #c1 = complex(1,1)
-            #c2 = complex(1.9,0)
-            #v2 = [c1, c2]
-            #v4 = [c1.real,complex(0,c1.imag),c2.real,complex(0,c2.imag)]
-            #v4 = v4 / np.sqrt(np.power(np.absolute(v4[0]),2)+np.power(np.absolute(v4[1]),2)+np.power(np.absolute(v4[2]),2)+np.power(np.absolute(v4[3]),2))
-
-            #v2 = v2 / np.sqrt(np.power(np.absolute(v2[0]),2)+np.power(np.absolute(v2[1]),2))
-
-
-            #channel = [v3, v4]
-            #test2 = np.linalg.pinv(channel)
-            #test2 = np.transpose(test2)
-
-            #test2[0] = test2[0] / np.sqrt(np.power(np.absolute(test2[0][0]), 2) + np.power(np.absolute(test2[0][1]), 2)+np.power(np.absolute(test2[0][2]), 2)+np.power(np.absolute(test2[0][3]), 2))
-            #test2[1] = test2[1] / np.sqrt(np.power(np.absolute(test2[1][0]), 2) + np.power(np.absolute(test2[1][1]), 2)+np.power(np.absolute(test2[1][2]), 2)+np.power(np.absolute(test2[1][3]), 2))
-
-            #bla2 = np.vdot(channel[0], test2[0])
-            #bla3 = np.dot(channel[1], test2[1])
-
-
-            #bla6 = np.dot(channel[0], test2[1])
-            #bla7 = np.dot(channel[1], test2[0])
-
-            #dot_product = np.vdot(channel[0], channel[1])
-
-            #real = dot_product.real
-            #abs = np.absolute(dot_product)
-            #norm_v1 = np.sqrt(np.power(np.absolute(channel[0][0]), 2)+np.power(np.absolute(channel[0][1]), 2)+np.power(np.absolute(channel[0][2]), 2)+np.power(np.absolute(channel[0][3]), 2))
-            #norm_v2 = np.sqrt(np.power(np.absolute(channel[1][0]), 2)+np.power(np.absolute(channel[1][1]), 2)+np.power(np.absolute(channel[1][2]), 2)+np.power(np.absolute(channel[1][3]), 2))
-
-            #angle = np.arccos(real / (norm_v1*norm_v2))
-            #angle = np.degrees(angle)
-
-            #angle_abs = np.arccos(abs / (norm_v1*norm_v2))
-            #angle_abs = np.degrees(angle_abs)
-
-            #norm = np.sqrt(np.vdot(channelmatrix_users[0][0],channelmatrix_users[0][0])+np.vdot(channelmatrix_users[0][1],channelmatrix_users[0][1]))
-            #norm = np.sqrt(np.vdot(h_inv_tra[0][0],h_inv_tra[0][0])+np.vdot(h_inv_tra[0][1],h_inv_tra[0][1]))
-
-
-
-            for i in range(0, len(channelmatrix_users)):
-                channelmatrix_users[i, :] = channelmatrix_users[i, :] * scalar_gain[i]
-                S.append(np.dot(h_inv_tra[i], channelmatrix_users[i, :]).real)
-            for i in range(0, len(channelmatrix_users)):
-                array = list(range(0, len(channelmatrix_users)))
-                array.remove(i)
-                for j in array:
-                    #test = np.vdot(h_inv_tra[j], channelmatrix_users[i, :])
-                    #bla = h_inv_tra[j][0]*channelmatrix_users[i, :][0]+h_inv_tra[j][1]*channelmatrix_users[i, :][1]
-                    #bla2 = np.conj(h_inv_tra[j][0])*channelmatrix_users[i, :][0]+np.conj(h_inv_tra[j][1])*channelmatrix_users[i, :][1]
-                    #bla3 = h_inv_tra[j][0]*np.conj(channelmatrix_users[i, :][0])+h_inv_tra[j][1]*np.conj(channelmatrix_users[i, :][1])
-                    #test2 = np.dot(h_inv_tra[j],channelmatrix_users[i, :] )
-                    if np.power(np.absolute(np.dot(h_inv_tra[j], channelmatrix_users[i, :])), 2) < 10 ** -10:
-                        sum = sum + 0
-                    else:
-                        sum = sum + np.linalg.norm(np.dot(channelmatrix_users[i, :], h_inv_tra[j]))
-                N.append(sum)
-                sum = 0
-
-            for i in range(0, len(channelmatrix_users)):
-                SINR.append(S[i] / (1 + N[i]))
-                R.append(math.log((1 + SINR[i]), 2))
-            rates.append(R)
+            UE_1 = action
+            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[iTbs])
             if option == 'test':
-                ues_thr = copy.deepcopy(ues_thr_optimal_global)
-                ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global)
-                ues_ri_ti_0 = rates[action][0] / ues_ri_ti_thr[action_to_ues_tbl[action][0]]
-                ues_ri_ti_1 = rates[action][1] / ues_ri_ti_thr[action_to_ues_tbl[action][1]]
+                ues_ri_ti_thr_3_win = copy.deepcopy(ues_thr_ri_ti_global_short).flatten()
+                array = list(copy.deepcopy(actions_array))
+                array.remove(action)
+                R_user = rates[action] * 1000 / 1000000
+                ues_ri_ti_0_3_win = R_user / ues_ri_ti_thr_3_win[action]
 
-                ues_ri_ti_thr[action_to_ues_tbl[action][0]] += rates[action][0]
-                ues_ri_ti_thr[action_to_ues_tbl[action][1]] += rates[action][1]
+                for i in array:
+                    if (ues_ri_ti_thr_3_win[i] != 0.00001):
+                        ues_ri_ti_thr_3_win[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[i]
+                if (ues_ri_ti_thr_3_win[action] == 0.00001):
+                    ues_ri_ti_thr_3_win[action] = (1 / time_window_short) * R_user
+                else:
+                    ues_ri_ti_thr_3_win[action] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[action] + (
+                                1 / time_window_short) * R_user
 
-                ues_thr[action_to_ues_tbl[action][0]] += rates[action][0]
-                ues_thr[action_to_ues_tbl[action][1]] += rates[action][1]
-                sum_ri_ti = ues_ri_ti_0 + ues_ri_ti_1
-                if max_ri_ti <= sum_ri_ti:
-                    max_ri_ti_action = action
-                    max_ri_ti = sum_ri_ti
-                    tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
-                sum_log = 0
-                for i in range(0, len(ues_thr)):
-                    sum_log = sum_log + float(np.log2(ues_thr[i]))
-                if max_sum_log <= sum_log:
-                    max_action = action
-                    max_sum_log = sum_log
-                    tmp_max_ues_thr = copy.deepcopy(ues_thr)
-        #ues_thr_optimal_global = tmp_max_ues_thr
+                if max_ri_ti_short < ues_ri_ti_0_3_win:
+                    max_ri_ti_short = ues_ri_ti_0_3_win
+                    tmp_max_ri_ti_thr_short = copy.deepcopy(ues_ri_ti_thr_3_win)
 
+            return rates, tmp_max_ri_ti_thr, tmp_max_ri_ti_thr_short
 
-        return  max_action, rates, tmp_max_ues_thr
+    def getMcsFromCqi(self, ue_cqi):
+        spectralEfficiency = SpectralEfficiencyForCqi[ue_cqi]
+        mcs = 0
+        while mcs < 28 and (SpectralEfficiencyForMcs[mcs + 1] <= spectralEfficiency):
+            mcs = mcs + 1
 
-
+        return mcs
 
     def find_optimal_action(self, observation, actions_array, option):
         max_sum_log = 0
