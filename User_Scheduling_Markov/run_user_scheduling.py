@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 5000000
+max_episodes = 20000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -48,15 +48,13 @@ max_test = 100000
 def update():
     global state_action
     global start_state
-
+    timer_tti = 1
     start_state = 'G G'
-    channels = env.create_channel(start_state)
+    channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
-    timer_tti = 0
     for episode in range(max_episodes):
         print("train " + str(episode))
 
-        timer_tti += 1
 
         # RL choose action based on observation
         action = RL.choose_action(str(observation), timer_tti)
@@ -72,8 +70,11 @@ def update():
 
         observation = observation_
 
+        timer_tti += 1
+
+
         if done:
-            timer_tti = 0
+            timer_tti = 1
 
     # end of game
     RL.save_table()
@@ -84,33 +85,33 @@ def test():
     global start_state
 
     start_state = 'G G'
-    channels = env.create_channel(start_state)
+    timer_tti = 1
+
+    channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
     User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
-    timer_tti = 0
     RL.load_table()
     for iter in range(0, 1):
         string_pf = "q_learning_SU_simple_10tti_pf_50RB_diff_gains_win10" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_10tti_rl_mean" + str(
+        string_rl = "q_learning_SU_20tti_rl_gb" + str(
             iter) + ".csv"
-        string_pf_short = "q_learning_SU_simple_10tti_pf_win10_mean" + str(
+        string_pf_short = "q_learning_SU_20tti_pf_gb" + str(
             iter) + ".csv"
 
         for episode in range(max_test):
             print("test " + str(episode))
-
-            timer_tti += 1
 
             action = RL.choose_action_test(str(observation))
             observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
 
             # swap observation
             observation = observation_
+            timer_tti += 1
 
             if done:
-                timer_tti = 0
+                timer_tti = 1
                 User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
 
         print('testing ' + str(iter) + ' over')

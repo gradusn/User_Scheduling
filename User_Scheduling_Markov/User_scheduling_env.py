@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 10
+max_time_slots = 20
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -74,7 +74,7 @@ old_action = []
 time_window = 10
 time_window_short = 10
 time_window_large = 1000
-time_window_test = 10
+time_window_test = 20
 diff = []
 metric_rl = []
 metric_pf = []
@@ -101,7 +101,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
 TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
 TransportBlockSizeTable_simple = [1384, 1800, 2216, 2856, 5000, 4392, 7000, 6200, 6968, 10000, 8760, 12000, 11448, 14000, 15000, 16000, 17000, 18336, 19000, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 27000]
 
-take_avg = 1000
+take_avg = 3000
 counter_avg = 0
 
 Throughputs = []
@@ -119,8 +119,8 @@ class UserScheduling(object):
         # self.title('User_scheduling')
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
-    def create_channel(self, channels_gain):
-        return str(channels_gain)
+    def create_channel(self, channels_gain, timer_tti):
+        return str(channels_gain)+ " "+str(timer_tti)
 
 
 
@@ -190,14 +190,17 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-        next_channel_state = channel_chain.next_state(state)
-        channels = self.create_channel(next_channel_state)
+
 
         if timer_tti == max_time_slots:
+            next_channel_state = 'G G'
+            channels = self.create_channel(next_channel_state, 1)
             s_ = self.reset(channels)
             done = True
 
         else:
+            next_channel_state = channel_chain.next_state(state)
+            channels = self.create_channel(next_channel_state, timer_tti+1)
             done = False
             s_ = np.array([slots, channels], dtype=object)
 
@@ -212,6 +215,8 @@ class UserScheduling(object):
         global ues_thr_ri_ti_global
         global counter_avg
         global Throughputs
+        global metric_pf_short
+        global metric_rl
 
         R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'test', timer_tti)
         slots = copy.deepcopy(observation[0])
@@ -240,9 +245,11 @@ class UserScheduling(object):
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
 
         next_channel_state = channel_chain.next_state(state)
-        channels = self.create_channel(next_channel_state)
+        channels = self.create_channel(next_channel_state, timer_tti+1)
 
         if timer_tti == max_time_slots:
+            next_channel_state = 'G G'
+            channels = self.create_channel(next_channel_state, 1)
 
             reward = 0
             for i in range(0, len(ues_thr_rl)):
@@ -267,6 +274,8 @@ class UserScheduling(object):
             counter_avg = 0
             mean_rl.append(np.mean(metric_rl))
             mean_pf.append(np.mean(metric_pf_short))
+            metric_rl = []
+            metric_pf_short = []
 
         counter_avg = counter_avg + 1
 
@@ -302,10 +311,10 @@ class UserScheduling(object):
         max_ri_ti_action = 0
         for action in actions_array:
             UE_1 = action
-            #MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
-            #iTbs = McsToItbsDl[MCS]
-            #rates.append(TransportBlockSizeTable[iTbs])
-            rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
+            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[iTbs])
+            #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
             if option == 'test':
                 ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_3_win = copy.deepcopy(ues_thr_ri_ti_global_short).flatten()

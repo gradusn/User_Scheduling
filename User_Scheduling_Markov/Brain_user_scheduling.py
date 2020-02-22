@@ -23,7 +23,7 @@ max_testing_episodes = 200000
 
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+    def __init__(self, actions, learning_rate=0.8, reward_decay=0.95, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.1,
                  epsilon_decay=0.000001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
@@ -206,10 +206,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_50RB_with_quant.pkl")
+        self.q_table.to_pickle("qtable_SU_example_20tti_with_quant_with_tti.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_50RB_with_quant.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_20tti_with_quant_with_tti.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
