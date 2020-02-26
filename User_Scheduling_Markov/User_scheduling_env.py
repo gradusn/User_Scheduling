@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 20
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -190,16 +190,15 @@ class UserScheduling(object):
         for i in range(0, len(ues_thr_rl)):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
-
+        next_channel_state = channel_chain.next_state(state)
 
         if timer_tti == max_time_slots:
-            next_channel_state = 'G G'
             channels = self.create_channel(next_channel_state, 1)
             s_ = self.reset(channels)
             done = True
 
         else:
-            next_channel_state = channel_chain.next_state(state)
+
             channels = self.create_channel(next_channel_state, timer_tti+1)
             done = False
             s_ = np.array([slots, channels], dtype=object)
@@ -248,7 +247,6 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state, timer_tti+1)
 
         if timer_tti == max_time_slots:
-            next_channel_state = 'G G'
             channels = self.create_channel(next_channel_state, 1)
 
             reward = 0
