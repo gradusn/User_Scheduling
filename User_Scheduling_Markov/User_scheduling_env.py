@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 10
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -126,7 +126,7 @@ class UserScheduling(object):
 
     def reset(self, channel_state):
         global Throughputs
-        Throughputs = np.full((1,n_UEs), 0.00001, dtype=float)
+        Throughputs = np.full((1,n_UEs), 1, dtype=float)
         array_slots = np.full((1,n_UEs), 0, dtype=float)
         observations = np.array([array_slots, channel_state], dtype=object)
         global ues_thr_random_global
@@ -164,6 +164,7 @@ class UserScheduling(object):
         #ues_thr_rl = copy.deepcopy(observation[0])
         #ues_thr_rl = ues_thr_rl[:3].flatten()
         slots = copy.deepcopy(observation[0])
+        #t = observation[1]
         slots = slots.flatten()
         ues_thr_rl = Throughputs[:3].flatten()
 
@@ -174,12 +175,12 @@ class UserScheduling(object):
         array.remove(action)
 
         for i in array:
-            if (ues_thr_rl[i] != 0.00001):
+            if (ues_thr_rl[i] != 1):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
             slots[i] += 1
 
-        if (ues_thr_rl[action] == 0.00001):
-            ues_thr_rl[action] = (1 / time_window) * thr_rl
+        if (ues_thr_rl[action] == 1):
+            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
         else:
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
         slots[action] = 0
@@ -217,7 +218,8 @@ class UserScheduling(object):
         global metric_pf_short
         global metric_rl
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'test', timer_tti)
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
+        print(str(observation) + str(action) + str(action_pf))
         slots = copy.deepcopy(observation[0])
         slots = slots.flatten()
         ues_thr_rl = Throughputs[:3].flatten()
@@ -228,12 +230,12 @@ class UserScheduling(object):
         array.remove(action)
 
         for i in array:
-            if (ues_thr_rl[i] != 0.00001):
+            if (ues_thr_rl[i] != 1):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
             slots[i] += 1
 
-        if (ues_thr_rl[action] == 0.00001):
-            ues_thr_rl[action] = (1 / time_window) * thr_rl
+        if (ues_thr_rl[action] == 1):
+            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
         else:
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
         slots[action] = 0
@@ -288,11 +290,11 @@ class UserScheduling(object):
         actions = np.arange(n_UEs)
         if option == 'train':
             actions = [action_rl]
-            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short = self.find_optimal_action(observation, actions, option, timer_tti)
+            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
             return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
         else:
-            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short = self.find_optimal_action(observation, actions, option, timer_tti)
-            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
+            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
+            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf
 
     def find_optimal_action(self, observation, actions_array, option, timer_tti):
         max_sum_log = 0
@@ -314,48 +316,33 @@ class UserScheduling(object):
             rates.append(TransportBlockSizeTable[iTbs])
             #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
             if option == 'test':
-                ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
+                #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_3_win = copy.deepcopy(ues_thr_ri_ti_global_short).flatten()
 
 
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
                 R_user = rates[action]*1000/1000000
-                ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
+                #ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
                 ues_ri_ti_0_3_win = R_user / ues_ri_ti_thr_3_win[action]
 
-
                 for i in array:
-                    if (ues_ri_ti_thr[i] != 0.00001):
-                        ues_ri_ti_thr[i] = (1 - (1 / time_window_large)) * ues_ri_ti_thr[i]
-                if (ues_ri_ti_thr[action] == 0.00001):
-                    ues_ri_ti_thr[action] = (1 / time_window_large) * R_user
-                else:
-                    ues_ri_ti_thr[action] = (1 - (1 / time_window_large)) * ues_ri_ti_thr[action] + (1 / time_window_large) * R_user
-
-                for i in array:
-                    if (ues_ri_ti_thr_3_win[i] != 0.00001):
+                    if (ues_ri_ti_thr_3_win[i] != 1):
                         ues_ri_ti_thr_3_win[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[i]
-                if (ues_ri_ti_thr_3_win[action] == 0.00001):
-                    ues_ri_ti_thr_3_win[action] = (1 / time_window_short) * R_user
+
+                if (ues_ri_ti_thr_3_win[action] == 1):
+                    ues_ri_ti_thr_3_win[action] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[action] + (1 / time_window_short) * R_user
                 else:
                     ues_ri_ti_thr_3_win[action] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[action] + (1 / time_window_short) * R_user
 
-
-
-                sum_ri_ti = ues_ri_ti_0
-                if max_ri_ti < sum_ri_ti:
-                    max_ri_ti_action = action
-                    max_ri_ti = sum_ri_ti
-                    tmp_max_ri_ti_thr = copy.deepcopy(ues_ri_ti_thr)
-
                 if max_ri_ti_short < ues_ri_ti_0_3_win:
+                    max_ri_ti_action = action
                     max_ri_ti_short = ues_ri_ti_0_3_win
                     tmp_max_ri_ti_thr_short = copy.deepcopy(ues_ri_ti_thr_3_win)
 
 
 
-        return  rates, tmp_max_ri_ti_thr, tmp_max_ri_ti_thr_short
+        return  rates, tmp_max_ri_ti_thr, tmp_max_ri_ti_thr_short, max_ri_ti_action
 
     def getMcsFromCqi(self, ue_cqi):
         spectralEfficiency = SpectralEfficiencyForCqi[ue_cqi]

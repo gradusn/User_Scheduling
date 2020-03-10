@@ -20,10 +20,24 @@ import csv
 import MarkovChain
 
 max_testing_episodes = 200000
+'''
+Trying to solve the learning problem
+reward_decay = 0.1
+learning_rate = 0.1
+start from 1,1 rates
 
+qtable_SU_example_5tti_quant_noResetChan_rev05
+
+10/3 - 14:08
+Changed update of a chosen UE with thr = 1
+ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
+qtable_SU_example_5tti_quant_noResetChan_rev06
+
+
+'''
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.1, reward_decay=0, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+    def __init__(self, actions, learning_rate=0.1, reward_decay=0.1, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
                  epsilon_decay=0.000001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
@@ -191,7 +205,12 @@ class QLearningTable:
 
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
         self.check_state_exist(s_, timer_tti)
-        q_predict = self.q_table.loc[s, a]
+        q_predict = self.q_table.loc[str(s), a]
+        check = s[1]
+        '''
+        if (check == 'G G 1'):
+            enter = 1
+        '''
 
         if (timer_tti < User_scheduling_env.max_time_slots):
             q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
@@ -199,17 +218,20 @@ class QLearningTable:
             q_target = r  # next state is terminal
 
         # q_target = r + self.gamma * self.q_table.loc[s_, :].max()
-
-        self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
+        '''
+        if (q_target - q_predict) < 0 :
+            enter = 2
+        '''
+        self.q_table.loc[str(s), a] += self.lr * (q_target - q_predict)  # update
         self.epsilon = self.minimum_epsilon + (self.maximum_epsilon - self.minimum_epsilon) * np.exp(
             -self.epsilon_decay * episode)
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_quant_noResetChan_rev01.pkl")
+        self.q_table.to_pickle("qtable_SU_example_5tti_quant_noResetChan_rev06.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant_noResetChan.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_5tti_quant_noResetChan_rev06.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:

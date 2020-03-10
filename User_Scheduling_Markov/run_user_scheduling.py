@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 10000000
+max_episodes = 5000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -64,7 +64,7 @@ def update():
         observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
 
         # RL learn from this transition
-        RL.learn(str(observation), action, reward, str(observation_), timer_tti, episode, max_episodes)
+        RL.learn(observation, action, reward, str(observation_), timer_tti, episode, max_episodes)
 
         # swap observation
 
@@ -89,7 +89,7 @@ def test():
 
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
-    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
@@ -112,7 +112,7 @@ def test():
 
             if done:
                 timer_tti = 1
-                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0.00001, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
 
         print('testing ' + str(iter) + ' over')
 
