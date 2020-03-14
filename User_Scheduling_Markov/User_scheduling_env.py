@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 5
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -45,6 +45,9 @@ gain1 = {'G': [13, 13], 'B': [3, 3]}
 
 #gain = [gain0, gain1, gain2]
 gain = [gain0, gain1]
+
+count_GG_rl = 0
+count_GG_pf = 0
 
 
 
@@ -217,9 +220,17 @@ class UserScheduling(object):
         global Throughputs
         global metric_pf_short
         global metric_rl
+        global count_GG_rl
+        global count_GG_pf
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         print(str(observation) + str(action) + str(action_pf))
+        if str(observation[1]) == 'G G '+str(timer_tti):
+            if action == 1:
+                count_GG_rl = count_GG_rl + 1
+            if action_pf == 1:
+                count_GG_pf = count_GG_pf + 1
+
         slots = copy.deepcopy(observation[0])
         slots = slots.flatten()
         ues_thr_rl = Throughputs[:3].flatten()

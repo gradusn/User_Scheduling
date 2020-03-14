@@ -33,13 +33,13 @@ n_UEs = 2
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
+property_to_probability2 = {'G': [0.05, 0.95], 'B': [0.95, 0.05]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
 corr_probability = 0.8
 
-max_episodes = 5000000
+max_episodes = 20000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -115,6 +115,9 @@ def test():
                 User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
 
         print('testing ' + str(iter) + ' over')
+
+        count_GG_rl = User_scheduling_env.count_GG_rl
+        count_GG_pf = User_scheduling_env.count_GG_pf
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
@@ -211,8 +214,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

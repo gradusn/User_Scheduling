@@ -32,13 +32,21 @@ qtable_SU_example_5tti_quant_noResetChan_rev05
 Changed update of a chosen UE with thr = 1
 ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 qtable_SU_example_5tti_quant_noResetChan_rev06
+10/3 - 14:48
+Changed to 10 slots 
+qtable_SU_example_10tti_quant_noResetChan_rev0
+
+12/3 18:34
+Changed probablities to 0.95 transition
+20Mil Iter
+qtable_SU_example_10tti_quant_noResetChan_rev1
 
 
 '''
 
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.1, reward_decay=0.1, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
-                 epsilon_decay=0.000001):
+                 epsilon_decay=0.0000001):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
@@ -228,10 +236,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_5tti_quant_noResetChan_rev06.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_quant_noResetChan_rev1.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_5tti_quant_noResetChan_rev06.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant_noResetChan_rev1.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
