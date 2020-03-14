@@ -118,6 +118,7 @@ def test():
 
         count_GG_rl = User_scheduling_env.count_GG_rl
         count_GG_pf = User_scheduling_env.count_GG_pf
+        observations = User_scheduling_env.q_table
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')

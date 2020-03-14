@@ -109,6 +109,9 @@ counter_avg = 0
 
 Throughputs = []
 
+q_table = pd.DataFrame(columns=list(range(3)), dtype=np.float64)
+string_channels = ""
+
 class UserScheduling(object):
     def __init__(self):
         super(UserScheduling, self).__init__()
@@ -222,9 +225,12 @@ class UserScheduling(object):
         global metric_rl
         global count_GG_rl
         global count_GG_pf
+        global string_channels
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         print(str(observation) + str(action) + str(action_pf))
+        #print(str(observation[0]))
+        string_channels = string_channels + str(observation[0]) + " " + str(observation[1]) + "  "
         if str(observation[1]) == 'G G '+str(timer_tti):
             if action == 1:
                 count_GG_rl = count_GG_rl + 1
@@ -274,6 +280,9 @@ class UserScheduling(object):
 
             metric_pf_short.append(reward_optimal_short)
 
+            self.check_state(string_channels, reward, reward_optimal_short)
+
+            string_channels = ""
             s_ = self.reset(channels)
             done = True
 
@@ -291,6 +300,23 @@ class UserScheduling(object):
         counter_avg = counter_avg + 1
 
         return s_, next_channel_state, done
+
+    def check_state(self, channels, reward_rl, reward_pf):
+        global q_table
+        if channels not in q_table.index:
+            q_table = q_table.append(
+                pd.Series(
+                    [0] * 3,
+                    index=q_table.columns,
+                    name=channels,
+                )
+            )
+            q_table.loc[channels, 0] += 1
+            q_table.loc[channels, 1] = np.round(reward_rl, 5)
+            q_table.loc[channels, 2] = np.round(reward_pf, 5)
+        else:
+            q_table.loc[channels, 0] += 1
+
 
 
     def get_rates(self, observation, action_rl, option, timer_tti):
