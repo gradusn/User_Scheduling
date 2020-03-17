@@ -93,18 +93,17 @@ def test():
     User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_simple_10tti_pf_50RB_diff_gains_win10" + str(
+        string_pf = "q_learning_SU_10tti_pf_50RB_diff_gains_win10" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_20tti_rl_gb" + str(
-            iter) + ".csv"
-        string_pf_short = "q_learning_SU_20tti_pf_gb" + str(
-            iter) + ".csv"
+        string_rl = "q_learning_SU_10tti_rl_gb_quant2.csv"
+        string_pf_short = "q_learning_SU_10tti_pf_gb_quant2.csv"
+        string_gg = "GG_comaprison.csv"
 
         for episode in range(max_test):
             print("test " + str(episode))
 
             action = RL.choose_action_test(str(observation))
-            observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
+            observation_, start_state, done, finish_test = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
 
             # swap observation
             observation = observation_
@@ -113,20 +112,27 @@ def test():
             if done:
                 timer_tti = 1
                 User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
+            if finish_test == 1:
+                break;
 
         print('testing ' + str(iter) + ' over')
 
         count_GG_rl = User_scheduling_env.count_GG_rl
         count_GG_pf = User_scheduling_env.count_GG_pf
+        array_GG = [count_GG_rl, count_GG_pf]
         observations = User_scheduling_env.q_table
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.mean_rl)
+            thr_csv.writerow(User_scheduling_env.metric_rl)
             thr.close()
         with open(string_pf_short, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.mean_pf)
+            thr_csv.writerow(User_scheduling_env.metric_pf_short)
+            thr.close()
+        with open(string_gg, "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerow(array_GG)
             thr.close()
 
 

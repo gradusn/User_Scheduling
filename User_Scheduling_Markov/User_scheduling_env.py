@@ -104,7 +104,7 @@ McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 
 TransportBlockSizeTable = [1384, 1800, 2216, 2856, 3624, 4392, 5160, 6200, 6968, 7992, 8760, 9912, 11448, 12960, 14112, 15264, 16416, 18336, 19848, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 36696]
 TransportBlockSizeTable_simple = [1384, 1800, 2216, 2856, 5000, 4392, 7000, 6200, 6968, 10000, 8760, 12000, 11448, 14000, 15000, 16000, 17000, 18336, 19000, 21384, 22920, 25456, 27376, 28336, 30576, 31704, 27000]
 
-take_avg = 3000
+take_avg = 10000
 counter_avg = 0
 
 Throughputs = []
@@ -132,9 +132,18 @@ class UserScheduling(object):
 
     def reset(self, channel_state):
         global Throughputs
-        Throughputs = np.full((1,n_UEs), 1, dtype=float)
-        array_slots = np.full((1,n_UEs), 0, dtype=float)
-        observations = np.array([array_slots, channel_state], dtype=object)
+        Throughputs = np.full((1, n_UEs), 1, dtype=float)
+        array_slots = np.full((1, n_UEs), 0, dtype=float)
+        gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
+        gb_channels = channel_state.split()
+        for i in range(n_UEs):
+            if gb_channels[i] == 'G':
+                gb_slots[i] = 0
+            else:
+                gb_slots[i] = 1
+        observations = np.array([array_slots, channel_state, gb_slots], dtype=object)
+
+
         global ues_thr_random_global
         global ues_thr_ri_ti_global_short
         global ues_thr_ri_ti_global
@@ -170,8 +179,11 @@ class UserScheduling(object):
         #ues_thr_rl = copy.deepcopy(observation[0])
         #ues_thr_rl = ues_thr_rl[:3].flatten()
         slots = copy.deepcopy(observation[0])
+        gbslots = copy.deepcopy(observation[2]).flatten()
+        gb_channels = copy.deepcopy(observation[1]).split()
         #t = observation[1]
         slots = slots.flatten()
+        #gbslots = gbslots.flatten()
         ues_thr_rl = Throughputs[:3].flatten()
 
 
@@ -184,6 +196,8 @@ class UserScheduling(object):
             if (ues_thr_rl[i] != 1):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
             slots[i] += 1
+
+
 
         if (ues_thr_rl[action] == 1):
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
@@ -207,8 +221,15 @@ class UserScheduling(object):
         else:
 
             channels = self.create_channel(next_channel_state, timer_tti+1)
+            gb_channels = channels.split()
             done = False
-            s_ = np.array([slots, channels], dtype=object)
+            for i in range(n_UEs):
+                if gb_channels[i] == 'G':
+                    gbslots[i] = 0
+                else:
+                    gbslots[i] += 1
+
+            s_ = np.array([slots, channels, gbslots], dtype=object)
 
         return s_, reward, next_channel_state,  done
 
@@ -226,6 +247,9 @@ class UserScheduling(object):
         global count_GG_rl
         global count_GG_pf
         global string_channels
+        gbslots = copy.deepcopy(observation[2]).flatten()
+        gb_channels = copy.deepcopy(observation[1]).split()
+        finish_test = 0
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         print(str(observation) + str(action) + str(action_pf))
@@ -287,19 +311,28 @@ class UserScheduling(object):
             done = True
 
         else:
+            gb_channels = channels.split()
             done = False
-            s_ = np.array([slots, channels], dtype=object)
+            for i in range(n_UEs):
+                if gb_channels[i] == 'G':
+                    gbslots[i] = 0
+                else:
+                    gbslots[i] += 1
+
+            s_ = np.array([slots, channels, gbslots], dtype=object)
+            #s_ = np.array([slots, channels], dtype=object)
 
         if counter_avg == take_avg:
             counter_avg = 0
             mean_rl.append(np.mean(metric_rl))
             mean_pf.append(np.mean(metric_pf_short))
-            metric_rl = []
-            metric_pf_short = []
+            finish_test = 1
+            #metric_rl = []
+            #metric_pf_short = []
 
         counter_avg = counter_avg + 1
 
-        return s_, next_channel_state, done
+        return s_, next_channel_state, done, finish_test
 
     def check_state(self, channels, reward_rl, reward_pf):
         global q_table

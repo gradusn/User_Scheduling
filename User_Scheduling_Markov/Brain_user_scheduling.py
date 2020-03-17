@@ -41,7 +41,9 @@ Changed probablities to 0.95 transition
 20Mil Iter
 qtable_SU_example_10tti_quant_noResetChan_rev1
 
-
+14/3 19:30
+Added quant of GG
+qtable_SU_example_10tti_quant2_rev0
 '''
 
 class QLearningTable:
@@ -236,10 +238,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_quant_noResetChan_rev1.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_rev0.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant_noResetChan_rev1.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_rev0.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
