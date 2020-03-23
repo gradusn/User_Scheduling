@@ -109,7 +109,9 @@ counter_avg = 0
 
 Throughputs = []
 
-q_table = pd.DataFrame(columns=list(range(3)), dtype=np.float64)
+count = 0
+
+q_table = pd.DataFrame(columns=list(range(5000)), dtype=np.float64)
 string_channels = ""
 
 class UserScheduling(object):
@@ -168,14 +170,17 @@ class UserScheduling(object):
     def step(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
         global scalar_gain_array
-        global ues_thr_optimal_global
+        global ues_thr_ri_ti_global_short
         global old_action
         global old_optimal_action
         global Throughputs
+        global string_channels
         check = []
+        global count
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
-
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
+        string_channels = string_channels + str(observation[1]) + "  "
+        print(str(observation) + str(action) + str(action_pf))
         #ues_thr_rl = copy.deepcopy(observation[0])
         #ues_thr_rl = ues_thr_rl[:3].flatten()
         slots = copy.deepcopy(observation[0])
@@ -206,6 +211,7 @@ class UserScheduling(object):
         slots[action] = 0
 
         Throughputs = ues_thr_rl
+        ues_thr_ri_ti_global_short = tmp_thr_optimal_short
         # reward function
         reward = 0
         for i in range(0, len(ues_thr_rl)):
@@ -214,8 +220,27 @@ class UserScheduling(object):
         next_channel_state = channel_chain.next_state(state)
 
         if timer_tti == max_time_slots:
+
             channels = self.create_channel(next_channel_state, 1)
             s_ = self.reset(channels)
+
+            reward_for_stat = 0
+            for i in range(0, len(ues_thr_rl)):
+                reward_for_stat = reward_for_stat + float(np.log2(ues_thr_rl[i]))
+
+            #metric_rl.append(reward_for_stat)
+
+            reward_optimal_short = 0
+            for i in range(0, len(tmp_thr_optimal_short)):
+                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
+
+            #metric_pf_short.append(reward_optimal_short)
+
+
+            finish_5000 = self.check_state(string_channels, reward - reward_optimal_short)
+            string_channels = ""
+
+
             done = True
 
         else:
@@ -231,7 +256,7 @@ class UserScheduling(object):
 
             s_ = np.array([slots, channels, gbslots], dtype=object)
 
-        return s_, reward, next_channel_state,  done
+        return s_, reward, next_channel_state,  done, finish_5000
 
     def step_test(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
@@ -304,7 +329,7 @@ class UserScheduling(object):
 
             metric_pf_short.append(reward_optimal_short)
 
-            self.check_state(string_channels, reward, reward_optimal_short)
+            #self.check_state(string_channels, reward, reward_optimal_short)
 
             string_channels = ""
             s_ = self.reset(channels)
@@ -334,21 +359,29 @@ class UserScheduling(object):
 
         return s_, next_channel_state, done, finish_test
 
-    def check_state(self, channels, reward_rl, reward_pf):
+    def check_state(self, channels, reward):
         global q_table
         if channels not in q_table.index:
             q_table = q_table.append(
                 pd.Series(
-                    [0] * 3,
+                    [-1] * 5000,
                     index=q_table.columns,
                     name=channels,
                 )
             )
-            q_table.loc[channels, 0] += 1
-            q_table.loc[channels, 1] = np.round(reward_rl, 5)
-            q_table.loc[channels, 2] = np.round(reward_pf, 5)
+            q_table.loc[channels, 0] = 1
+
         else:
             q_table.loc[channels, 0] += 1
+
+        count = q_table.loc[channels, 0]
+        if count < 4999:
+            q_table.loc[channels, count] = reward
+            finish_5000 = 0
+        else:
+            finish_5000 = 1
+        return finish_5000
+
 
 
 

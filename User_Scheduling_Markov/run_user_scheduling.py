@@ -33,7 +33,7 @@ n_UEs = 2
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
+property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
@@ -52,6 +52,8 @@ def update():
     start_state = 'G G'
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
+    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
+
     for episode in range(max_episodes):
         print("train " + str(episode))
 
@@ -61,7 +63,7 @@ def update():
 
 
         # RL take action and get next observation and reward
-        observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
+        observation_, reward, start_state, done, finish_5000 = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
 
         # RL learn from this transition
         RL.learn(observation, action, reward, str(observation_), timer_tti, episode, max_episodes)
@@ -75,6 +77,9 @@ def update():
 
         if done:
             timer_tti = 1
+            User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
+        if finish_5000 == 1:
+            break
 
     # end of game
     RL.save_table()
@@ -221,8 +226,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
