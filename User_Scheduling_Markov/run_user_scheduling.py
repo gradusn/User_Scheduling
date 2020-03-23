@@ -91,6 +91,7 @@ def test():
     observation = env.reset(channels)
     User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
         string_pf = "q_learning_SU_10tti_pf_50RB_diff_gains_win10" + str(
@@ -112,6 +113,8 @@ def test():
             if done:
                 timer_tti = 1
                 User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
+
             if finish_test == 1:
                 break;
 
@@ -120,7 +123,7 @@ def test():
         count_GG_rl = User_scheduling_env.count_GG_rl
         count_GG_pf = User_scheduling_env.count_GG_pf
         array_GG = [count_GG_rl, count_GG_pf]
-        observations = User_scheduling_env.q_table
+        #observations = User_scheduling_env.q_table
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')

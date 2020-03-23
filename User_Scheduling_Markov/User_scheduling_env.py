@@ -64,6 +64,8 @@ logthr_optimal = []
 ues_thr_random_global = []
 ues_thr_ri_ti_global_short = []
 ues_thr_ri_ti_global = []
+ues_thr_ri_ti_global_rr = []
+UE_for_RR = 0
 
 scalar_gain_array = []
 
@@ -82,6 +84,7 @@ diff = []
 metric_rl = []
 metric_pf = []
 metric_pf_short = []
+metric_rr = []
 
 mean_rl = []
 mean_pf = []
@@ -247,13 +250,16 @@ class UserScheduling(object):
         global count_GG_rl
         global count_GG_pf
         global string_channels
+        global ues_thr_ri_ti_global_rr
+        global UE_for_RR
+        global metric_rr
+
         gbslots = copy.deepcopy(observation[2]).flatten()
         gb_channels = copy.deepcopy(observation[1]).split()
         finish_test = 0
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         print(str(observation) + str(action) + str(action_pf))
-        #print(str(observation[0]))
         string_channels = string_channels + str(observation[0]) + " " + str(observation[1]) + "  "
         if str(observation[1]) == 'G G '+str(timer_tti):
             if action == 1:
@@ -265,10 +271,16 @@ class UserScheduling(object):
         slots = slots.flatten()
         ues_thr_rl = Throughputs[:3].flatten()
 
+        ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
+
         thr_rl = R[action] * 1000 / 1000000
+        thr_rr = R[UE_for_RR] * 1000 / 1000000
 
         array = list(np.arange(n_UEs))
         array.remove(action)
+
+        array_rr = list(np.arange(n_UEs))
+        array_rr.remove(UE_for_RR)
 
         for i in array:
             if (ues_thr_rl[i] != 1):
@@ -283,8 +295,24 @@ class UserScheduling(object):
 
         Throughputs = ues_thr_rl
 
+        for i in array_rr:
+            if (ues_ri_ti_thr_rr[i] != 1):
+                ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
+
+        if (ues_ri_ti_thr_rr[UE_for_RR] == 1):
+            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+                        1 / time_window_short) * thr_rr
+        else:
+            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+                        1 / time_window_short) * thr_rr
+
         ues_thr_ri_ti_global = tmp_thr_optimal
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
+        ues_thr_ri_ti_global_rr = ues_ri_ti_thr_rr
+
+        UE_for_RR = UE_for_RR + 1
+        UE_for_RR = UE_for_RR % n_UEs
+
 
         next_channel_state = channel_chain.next_state(state)
         channels = self.create_channel(next_channel_state, timer_tti+1)
@@ -304,7 +332,14 @@ class UserScheduling(object):
 
             metric_pf_short.append(reward_optimal_short)
 
-            self.check_state(string_channels, reward, reward_optimal_short)
+            reward_rr = 0
+            for i in range(0, len(ues_ri_ti_thr_rr)):
+                reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
+
+            metric_rr.append(reward_rr)
+
+
+            #self.check_state(string_channels, reward, reward_optimal_short)
 
             string_channels = ""
             s_ = self.reset(channels)
@@ -374,6 +409,7 @@ class UserScheduling(object):
         global gain
         global ues_thr_ri_ti_global_short
         global ues_thr_ri_ti_global
+        global ues_thr_ri_ti_global_rr
         tmp_max_ri_ti_thr_short = []
         tmp_max_ri_ti_thr = []
 
