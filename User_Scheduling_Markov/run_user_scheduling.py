@@ -33,7 +33,7 @@ n_UEs = 2
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.05, 0.95], 'B': [0.95, 0.05]}
+property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
@@ -95,9 +95,9 @@ def test():
     for iter in range(0, 1):
         string_pf = "q_learning_SU_10tti_pf_50RB_diff_gains_win10" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_10tti_rl_gb_quant2.csv"
-        string_pf_short = "q_learning_SU_10tti_pf_gb_quant2.csv"
-        string_gg = "GG_comaprison.csv"
+        string_rl = "q_learning_SU_10tti_rl_gb_quant2_0_5.csv"
+        string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
+        string_gg = "GG_comaprison_0_5.csv"
 
         for episode in range(max_test):
             print("test " + str(episode))

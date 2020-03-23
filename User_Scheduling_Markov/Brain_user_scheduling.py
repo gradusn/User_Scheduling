@@ -44,6 +44,23 @@ qtable_SU_example_10tti_quant_noResetChan_rev1
 14/3 19:30
 Added quant of GG
 qtable_SU_example_10tti_quant2_rev0
+
+17/3 9:07
+Changed markov to 0.9, 0.1
+qtable_SU_example_10tti_quant2_rev1
+
+18/3 13:47
+Changed Markov to 0.85, 0.15
+qtable_SU_example_10tti_quant2_rev2
+
+20/3 10:30
+Changed Markov to 0.8,0.2
+qtable_SU_example_10tti_quant2_rev3
+
+21/3 17:09
+Changed to 0.5,0.5
+qtable_SU_example_10tti_quant2_rev4
+
 '''
 
 class QLearningTable:
@@ -238,10 +255,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_rev0.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_rev4.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_rev0.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_rev4.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
