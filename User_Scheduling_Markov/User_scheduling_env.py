@@ -111,7 +111,7 @@ Throughputs = []
 
 count = 0
 
-q_table = pd.DataFrame(columns=list(range(5000)), dtype=np.float64)
+q_table = pd.DataFrame(columns=list(range(10001)), dtype=np.float64)
 string_channels = ""
 
 class UserScheduling(object):
@@ -180,7 +180,7 @@ class UserScheduling(object):
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         string_channels = string_channels + str(observation[1]) + "  "
-        print(str(observation) + str(action) + str(action_pf))
+        #print(str(observation) + str(action) + str(action_pf))
         #ues_thr_rl = copy.deepcopy(observation[0])
         #ues_thr_rl = ues_thr_rl[:3].flatten()
         slots = copy.deepcopy(observation[0])
@@ -192,7 +192,7 @@ class UserScheduling(object):
         ues_thr_rl = Throughputs[:3].flatten()
 
 
-        thr_rl = R[0]*1000/1000000
+        thr_rl = R[action]*1000/1000000
 
         array = list(np.arange(n_UEs))
         array.remove(action)
@@ -218,7 +218,7 @@ class UserScheduling(object):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
         next_channel_state = channel_chain.next_state(state)
-
+        finish_5000 = 0
         if timer_tti == max_time_slots:
 
             channels = self.create_channel(next_channel_state, 1)
@@ -361,24 +361,27 @@ class UserScheduling(object):
 
     def check_state(self, channels, reward):
         global q_table
+        finish_5000 = 0
         if channels not in q_table.index:
             q_table = q_table.append(
                 pd.Series(
-                    [-1] * 5000,
+                    [-1] * 10001,
                     index=q_table.columns,
                     name=channels,
                 )
             )
-            q_table.loc[channels, 0] = 1
+            q_table.loc[channels, 0] = 0
 
         else:
             q_table.loc[channels, 0] += 1
 
         count = q_table.loc[channels, 0]
-        if count < 4999:
-            q_table.loc[channels, count] = reward
-            finish_5000 = 0
-        else:
+        if count < 1000001 and count % 100 == 0:
+            if count == 0:
+                q_table.loc[channels, 1] = reward
+            else:
+                q_table.loc[channels, (count / 100) + 1] = reward
+        elif count >= 1000001:
             finish_5000 = 1
         return finish_5000
 

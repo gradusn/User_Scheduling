@@ -82,6 +82,7 @@ def update():
             break
 
     # end of game
+    User_scheduling_env.q_table.to_pickle("qtable_SU_example_10tti_quant2_convergence.pkl")
     RL.save_table()
     print('training over')
 

@@ -61,6 +61,9 @@ qtable_SU_example_10tti_quant2_rev3
 Changed to 0.5,0.5
 qtable_SU_example_10tti_quant2_rev4
 
+23/3
+Add convergence table
+
 '''
 
 class QLearningTable:
@@ -255,10 +258,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_rev4.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_rev5_convergence.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_rev4.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_rev5_convergence.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
