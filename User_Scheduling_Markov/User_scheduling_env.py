@@ -137,13 +137,14 @@ class UserScheduling(object):
         global Throughputs
         Throughputs = np.full((1, n_UEs), 1, dtype=float)
         array_slots = np.full((1, n_UEs), 0, dtype=float)
-        gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
+        gb_slots = np.full((1, n_UEs), 0, dtype=float). flatten()
         gb_channels = channel_state.split()
+
         for i in range(n_UEs):
             if gb_channels[i] == 'G':
-                gb_slots[i] = 0
-            else:
-                gb_slots[i] = 1
+                gb_slots[i] += 1
+
+
         observations = np.array([array_slots, channel_state, gb_slots], dtype=object)
 
 
@@ -183,7 +184,7 @@ class UserScheduling(object):
         #ues_thr_rl = ues_thr_rl[:3].flatten()
         slots = copy.deepcopy(observation[0])
         gbslots = copy.deepcopy(observation[2]).flatten()
-        gb_channels = copy.deepcopy(observation[1]).split()
+
         #t = observation[1]
         slots = slots.flatten()
         #gbslots = gbslots.flatten()
@@ -208,6 +209,8 @@ class UserScheduling(object):
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
         slots[action] = 0
 
+
+
         Throughputs = ues_thr_rl
         # reward function
         reward = 0
@@ -215,6 +218,10 @@ class UserScheduling(object):
             reward = reward + float(np.log2(ues_thr_rl[i]))
 
         next_channel_state = channel_chain.next_state(state)
+
+        for i in range(n_UEs):
+            if next_channel_state[i] == 'G':
+                gbslots[i] += 1
 
         if timer_tti == max_time_slots:
             channels = self.create_channel(next_channel_state, 1)
@@ -224,13 +231,14 @@ class UserScheduling(object):
         else:
 
             channels = self.create_channel(next_channel_state, timer_tti+1)
-            gb_channels = channels.split()
             done = False
+            '''
             for i in range(n_UEs):
                 if gb_channels[i] == 'G':
                     gbslots[i] = 0
                 else:
                     gbslots[i] += 1
+            '''
 
             s_ = np.array([slots, channels, gbslots], dtype=object)
 
@@ -346,17 +354,15 @@ class UserScheduling(object):
             done = True
 
         else:
-            gb_channels = channels.split()
             done = False
             for i in range(n_UEs):
-                if gb_channels[i] == 'G':
-                    gbslots[i] = 0
-                else:
+                if next_channel_state[i] == 'G':
                     gbslots[i] += 1
 
             s_ = np.array([slots, channels, gbslots], dtype=object)
             #s_ = np.array([slots, channels], dtype=object)
 
+        '''
         if counter_avg == take_avg:
             counter_avg = 0
             mean_rl.append(np.mean(metric_rl))
@@ -364,6 +370,7 @@ class UserScheduling(object):
             finish_test = 1
             #metric_rl = []
             #metric_pf_short = []
+        '''
 
         counter_avg = counter_avg + 1
 
