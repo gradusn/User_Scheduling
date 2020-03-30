@@ -82,6 +82,7 @@ diff = []
 metric_rl = []
 metric_pf = []
 metric_pf_short = []
+metric_rr = []
 
 mean_rl = []
 mean_pf = []
@@ -111,8 +112,22 @@ Throughputs = []
 
 count = 0
 
-q_table = pd.DataFrame(columns=list(range(10001)), dtype=np.float64)
+q_table_rl = pd.DataFrame(columns=list(range(10001)), dtype=np.float64)
+q_table_pf = pd.DataFrame(columns=list(range(1)), dtype=np.float64)
+q_table_rr = pd.DataFrame(columns=list(range(1)), dtype=np.float64)
+
 string_channels = ""
+
+ues_thr_ri_ti_global_rr = []
+UE_for_RR = 0
+
+reward_rl = 0
+reward_rr = 0
+reward_optimal_short = 0
+
+channels_array = []
+
+
 
 class UserScheduling(object):
     def __init__(self):
@@ -132,9 +147,13 @@ class UserScheduling(object):
 
 
 
-    def reset(self, channel_state):
+    def reset(self, channel_state, test):
         global Throughputs
-        Throughputs = np.full((1, n_UEs), 1, dtype=float)
+        global Throughputs_for_testing
+        if test == 0:
+            Throughputs = np.full((1, n_UEs), 1, dtype=float)
+        else:
+            Throughputs_for_testing = np.full((1, n_UEs), 1, dtype=float)
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
         gb_channels = channel_state.split()
@@ -179,10 +198,11 @@ class UserScheduling(object):
         global count
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
-        string_channels = string_channels + str(observation[1]) + "  "
-        #print(str(observation) + str(action) + str(action_pf))
-        #ues_thr_rl = copy.deepcopy(observation[0])
-        #ues_thr_rl = ues_thr_rl[:3].flatten()
+        tmp_string = observation[1].split()
+        if timer_tti == max_time_slots:
+            string_channels = string_channels + str(tmp_string[0]) + " " + str(tmp_string[1])
+        else:
+            string_channels = string_channels + str(tmp_string[0])+" "+str(tmp_string[1]) + "_"
         slots = copy.deepcopy(observation[0])
         gbslots = copy.deepcopy(observation[2]).flatten()
         gb_channels = copy.deepcopy(observation[1]).split()
@@ -222,24 +242,10 @@ class UserScheduling(object):
         if timer_tti == max_time_slots:
 
             channels = self.create_channel(next_channel_state, 1)
-            s_ = self.reset(channels)
+            s_ = self.reset(channels, 0)
 
-            reward_for_stat = 0
-            for i in range(0, len(ues_thr_rl)):
-                reward_for_stat = reward_for_stat + float(np.log2(ues_thr_rl[i]))
-
-            #metric_rl.append(reward_for_stat)
-
-            reward_optimal_short = 0
-            for i in range(0, len(tmp_thr_optimal_short)):
-                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
-
-            #metric_pf_short.append(reward_optimal_short)
-
-
-            finish_5000 = self.check_state(string_channels, reward - reward_optimal_short)
+            self.add_channels_to_array(string_channels, 0)
             string_channels = ""
-
 
             done = True
 
@@ -272,6 +278,10 @@ class UserScheduling(object):
         global count_GG_rl
         global count_GG_pf
         global string_channels
+        global ues_thr_ri_ti_global_rr
+        global UE_for_RR
+        global metric_rr
+
         gbslots = copy.deepcopy(observation[2]).flatten()
         gb_channels = copy.deepcopy(observation[1]).split()
         finish_test = 0
@@ -290,10 +300,27 @@ class UserScheduling(object):
         slots = slots.flatten()
         ues_thr_rl = Throughputs[:3].flatten()
 
+        ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
+
         thr_rl = R[action] * 1000 / 1000000
+        thr_rr = R[UE_for_RR] * 1000 / 1000000
 
         array = list(np.arange(n_UEs))
         array.remove(action)
+
+        array_rr = list(np.arange(n_UEs))
+        array_rr.remove(UE_for_RR)
+
+        for i in array_rr:
+            if (ues_ri_ti_thr_rr[i] != 1):
+                ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
+
+        if (ues_ri_ti_thr_rr[UE_for_RR] == 1):
+            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+                    1 / time_window_short) * thr_rr
+        else:
+            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+                    1 / time_window_short) * thr_rr
 
         for i in array:
             if (ues_thr_rl[i] != 1):
@@ -310,6 +337,10 @@ class UserScheduling(object):
 
         ues_thr_ri_ti_global = tmp_thr_optimal
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
+        ues_thr_ri_ti_global_rr = ues_ri_ti_thr_rr
+
+        UE_for_RR = UE_for_RR + 1
+        UE_for_RR = UE_for_RR % n_UEs
 
         next_channel_state = channel_chain.next_state(state)
         channels = self.create_channel(next_channel_state, timer_tti+1)
@@ -328,6 +359,12 @@ class UserScheduling(object):
                 reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
 
             metric_pf_short.append(reward_optimal_short)
+
+            reward_rr = 0
+            for i in range(0, len(ues_ri_ti_thr_rr)):
+                reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
+
+            metric_rr.append(reward_rr)
 
             #self.check_state(string_channels, reward, reward_optimal_short)
 
@@ -358,6 +395,165 @@ class UserScheduling(object):
         counter_avg = counter_avg + 1
 
         return s_, next_channel_state, done, finish_test
+
+    def step_test_convergence(self, action, observation, timer_tti, channels):
+        global ues_thr_random_global
+        global scalar_gain_array
+        global ues_thr_ri_ti_global_short
+        global old_action
+        global old_optimal_action
+        global ues_thr_ri_ti_global
+        global counter_avg
+        global Throughputs_for_testing
+        global metric_pf_short
+        global metric_rl
+        global count_GG_rl
+        global count_GG_pf
+        global string_channels
+        global ues_thr_ri_ti_global_rr
+        global UE_for_RR
+        global metric_rr
+        global reward_rl
+        global reward_rr
+        global reward_optimal_short
+
+        gbslots = copy.deepcopy(observation[2]).flatten()
+        gb_channels = copy.deepcopy(observation[1]).split()
+        finish_test = 0
+
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
+        #print(str(observation) + str(action) + str(action_pf))
+        #string_channels = string_channels + str(observation[0]) + " " + str(observation[1]) + "  "
+        '''
+        if str(observation[1]) == 'G G ' + str(timer_tti):
+            if action == 1:
+                count_GG_rl = count_GG_rl + 1
+            if action_pf == 1:
+                count_GG_pf = count_GG_pf + 1
+        '''
+
+        slots = copy.deepcopy(observation[0])
+        slots = slots.flatten()
+
+        ues_thr_rl = Throughputs_for_testing[:3].flatten()
+        ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
+
+        thr_rl = R[action] * 1000 / 1000000
+        thr_rr = R[UE_for_RR] * 1000 / 1000000
+
+        array = list(np.arange(n_UEs))
+        array.remove(action)
+
+        array_rr = list(np.arange(n_UEs))
+        array_rr.remove(UE_for_RR)
+
+        for i in array_rr:
+            if (ues_ri_ti_thr_rr[i] != 1):
+                ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
+
+        if (ues_ri_ti_thr_rr[UE_for_RR] == 1):
+            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+                    1 / time_window_short) * thr_rr
+        else:
+            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+                    1 / time_window_short) * thr_rr
+
+        for i in array:
+            if (ues_thr_rl[i] != 1):
+                ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
+            slots[i] += 1
+
+        if (ues_thr_rl[action] == 1):
+            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
+        else:
+            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
+        slots[action] = 0
+
+        Throughputs_for_testing = ues_thr_rl
+
+        ues_thr_ri_ti_global_short = tmp_thr_optimal_short
+        ues_thr_ri_ti_global_rr = ues_ri_ti_thr_rr
+
+        UE_for_RR = UE_for_RR + 1
+        UE_for_RR = UE_for_RR % n_UEs
+
+        if timer_tti == max_time_slots:
+
+            reward_rl = 0
+            for i in range(0, len(ues_thr_rl)):
+                reward_rl = reward_rl + float(np.log2(ues_thr_rl[i]))
+
+            reward_optimal_short = 0
+            for i in range(0, len(tmp_thr_optimal_short)):
+                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
+
+            reward_rr = 0
+            for i in range(0, len(ues_ri_ti_thr_rr)):
+                reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
+
+            done = True
+            s_ = 0
+
+
+        else:
+            gb_channels = channels.split()
+            done = False
+            for i in range(n_UEs):
+                if gb_channels[i] == 'G':
+                    gbslots[i] = 0
+                else:
+                    gbslots[i] += 1
+            channels_test = self.create_channel(channels, timer_tti + 1)
+            s_ = np.array([slots, channels_test, gbslots], dtype=object)
+
+        return s_, done
+
+    def add_channels_to_array(self, channels, check):
+        global q_table_rl
+        global q_table_pf
+        global q_table_rr
+        global reward_rl
+        global reward_optimal_short
+        global reward_rr
+
+        if check == 0:
+            if channels not in q_table_rl.index:
+                q_table_rl = q_table_rl.append(
+                    pd.Series(
+                        [0] * 10001,
+                        index=q_table_rl.columns,
+                        name=channels,
+                    )
+                )
+
+                q_table_rl.loc[channels, 0] = 1
+
+                q_table_pf = q_table_pf.append(
+                    pd.Series(
+                        [0] * 1,
+                        index=q_table_pf.columns,
+                        name=channels,
+                    )
+                )
+
+                q_table_rr = q_table_rr.append(
+                    pd.Series(
+                        [0] * 1,
+                        index=q_table_rr.columns,
+                        name=channels,
+                    )
+                )
+            if channels not in channels_array:
+                channels_array.append(channels)
+        else:
+            count = q_table_rl.loc[channels, 0]
+            if  q_table_pf.loc[channels, 0] == 0:
+                q_table_pf.loc[channels, 0] = reward_optimal_short
+                q_table_rr.loc[channels, 0] = reward_rr
+            q_table_rl.loc[channels, count] = reward_rl
+            q_table_rl.loc[channels, 0] += 1
+
+
 
     def check_state(self, channels, reward):
         global q_table

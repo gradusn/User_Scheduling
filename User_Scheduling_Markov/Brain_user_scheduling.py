@@ -224,11 +224,14 @@ class QLearningTable:
 
     def choose_action_test(self, observation):
         if observation not in self.q_table.index:
-            print("No state in table")
-            state_action = self.q_table.iloc[0, :]
+            #print("No state in table")
+            #state_action = self.q_table.iloc[0, :]
+            action = np.random.choice(2, 1)
+            action = action[0]
         else:
             state_action = self.q_table.loc[observation, :]
-        action = np.random.choice(state_action[state_action == np.max(state_action)].index)
+            #print(state_action)
+            action = np.random.choice(state_action[state_action == np.max(state_action)].index)
 
         return action
 
