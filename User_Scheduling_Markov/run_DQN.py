@@ -3,6 +3,7 @@ from brain_DQN import DeepQNetwork
 import enviroment_DQN
 import numpy as np
 import csv
+import time
 
 from MarkovChain import MarkovChain
 
@@ -22,14 +23,14 @@ property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 n_UEs = 2
 
-max_episodes = 15000000
-max_test = 500000
+max_episodes = 5000000
+max_test = 100000
 
 def update():
     step = 0
     global state_action
     global start_state
-
+    start_time = time.time()
     timer_tti = 0
     start_state = 'G G'
     start_state_snr = env.create_channel(start_state)
@@ -63,6 +64,7 @@ def update():
     # end of game
     RL.save_mode()
     print('training over')
+    print("--- %s seconds of training ---" % (time.time() - start_time))
 
 def test():
     global state_action
@@ -73,12 +75,12 @@ def test():
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
     RL.load_model()
-    enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
+    enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 1, dtype=float)
 
     for iter in range(0,1):
-        string_pf = "q_learning_SU_simple_10tti_pf_50RB_diff_gains_win10" + str(
+        string_pf = "DQN_SU_simple_5ti_pf_p09_p01_lr08_rd09" + str(
             iter) + ".csv"
-        string_rl = "q_learning_SU_simple_10tti_rl_mean" + str(
+        string_rl = "DQN_SU_simple_5ti_rl_p09_p01_lr08_rd09" + str(
             iter) + ".csv"
         for episode in range(max_test):
 
@@ -96,16 +98,16 @@ def test():
 
             if done:
                 timer_tti = 0
-                enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
+                enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 1, dtype=float)
 
         print('testing ' + str(iter) + ' over')
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(enviroment_DQN.mean_rl)
+            thr_csv.writerow(enviroment_DQN.metric_rl)
             thr.close()
         with open(string_pf, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(enviroment_DQN.mean_pf)
+            thr_csv.writerow(enviroment_DQN.metric_pf)
             thr.close()
 
 
@@ -179,8 +181,8 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    #update()
-    test()
+    update()
+    #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

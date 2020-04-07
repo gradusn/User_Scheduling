@@ -23,8 +23,8 @@ class DeepQNetwork:
             self,
             n_actions,
             n_features,
-            learning_rate=0.01,
-            reward_decay=0.9,
+            learning_rate=0.1,
+            reward_decay=0.1,
             e_greedy=0.9,
             minimum_epsilon=0.1,
             max_epsilon=1.0,
@@ -176,12 +176,12 @@ class DeepQNetwork:
         tvars_vals = self.sess.run(w)
         print(tvars_vals)
 
-        save_path = self.saver.save(self.sess, "model_2_ues_gb_SU_reset_channels_5tti.ckpt")
+        save_path = self.saver.save(self.sess, "model_2_ues_gb_SU_reset_channels_5tti_lr01_rd01.ckpt")
 
 
 
     def load_model(self):
-        self.saver.restore(self.sess, "model_2_ues_gb_SU_reset_channels_5tti.ckpt")
+        self.saver.restore(self.sess, "model_2_ues_gb_SU_reset_channels_5tti_lr01_rd01.ckpt")
         print("Model restored")
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)
