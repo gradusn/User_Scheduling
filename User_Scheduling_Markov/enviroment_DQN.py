@@ -63,8 +63,8 @@ time_window = 10
 time_window_short = 10
 time_window_test = 10
 
-max_time_slots = 5
-max_time_slots_test = 5
+max_time_slots = 10
+max_time_slots_test = 10
 metric_pf = []
 metric_rl = []
 mean_pf = []
@@ -229,8 +229,8 @@ class UserScheduling(object):
 
         array = list(np.arange(n_UEs))
         array.remove(action)
-        print(start_state)
-        print(action)
+        print(start_state + str(action)+ str(action_pf))
+
 
 
         for i in array:

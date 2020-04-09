@@ -23,7 +23,7 @@ property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 n_UEs = 2
 
-max_episodes = 5000000
+max_episodes = 50000000
 max_test = 100000
 
 def update():
@@ -78,10 +78,8 @@ def test():
     enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 1, dtype=float)
 
     for iter in range(0,1):
-        string_pf = "DQN_SU_simple_5ti_pf_p09_p01_lr08_rd09" + str(
-            iter) + ".csv"
-        string_rl = "DQN_SU_simple_5ti_rl_p09_p01_lr08_rd09" + str(
-            iter) + ".csv"
+        string_pf = "DQN_SU_simple_10ti_pf_q09_p01_lr09_rd001.csv"
+        string_rl = "DQN_SU_simple_510i_rl_q09_p01_lr09_rd001.csv"
         for episode in range(max_test):
 
             timer_tti += 1
@@ -174,7 +172,7 @@ if __name__ == "__main__":
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
-                      reward_decay=0.9,
+                      reward_decay=0.7,
                       e_greedy=0.9,
                       replace_target_iter=200,
                       memory_size=2000,
