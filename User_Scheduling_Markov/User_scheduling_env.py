@@ -111,6 +111,9 @@ take_avg = 100000
 counter_avg = 0
 
 Throughputs = []
+array_thr_rl = []
+array_thr_pf = []
+
 
 q_table = pd.DataFrame(columns=list(range(3)), dtype=np.float64)
 string_channels = ""
@@ -135,6 +138,8 @@ class UserScheduling(object):
 
     def reset(self, channel_state):
         global Throughputs
+        global array_thr_rl
+        array_thr_rl = np.full((1, n_UEs), 1, dtype=float).flatten()
         Throughputs = np.full((1, n_UEs), 1, dtype=float)
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
@@ -195,6 +200,8 @@ class UserScheduling(object):
         array = list(np.arange(n_UEs))
         array.remove(action)
 
+        array_thr_rl[action] += thr_rl
+
         for i in array:
             if (ues_thr_rl[i] != 1):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
@@ -211,8 +218,8 @@ class UserScheduling(object):
         Throughputs = ues_thr_rl
         # reward function
         reward = 0
-        for i in range(0, len(ues_thr_rl)):
-            reward = reward + float(np.log2(ues_thr_rl[i]))
+        for i in range(0, len(array_thr_rl)):
+            reward = reward + float(np.log2(array_thr_rl[i]))
 
         next_channel_state = channel_chain.next_state(state)
 
