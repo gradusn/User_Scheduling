@@ -23,7 +23,7 @@ property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 n_UEs = 2
 
-max_episodes = 5000000
+max_episodes = 10000000
 max_test = 150000
 
 def update():
@@ -182,8 +182,8 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    update()
-    #test()
+    #update()
+    test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)

@@ -72,6 +72,7 @@ mean_pf = []
 mean_rl = []
 counter_avg = 0
 take_avg = 1000
+string_states = ""
 
 
 class UserScheduling(object):
@@ -229,6 +230,7 @@ class UserScheduling(object):
         global time_window
         global counter_avg
         global ues_thr_ri_ti_global_noavg
+        global string_states
 
 
         R, tmp_thr_optimal, action_pf, pf_thr_noavg = self.get_rates(observation, action, 'test')
@@ -238,8 +240,8 @@ class UserScheduling(object):
 
         array = list(np.arange(n_UEs))
         array.remove(action)
-        print(start_state + str(action)+ str(action_pf))
-
+        print(start_state + "  " + str(timer_tti) + " " + str(action) + " " + str(action_pf))
+        string_states = string_states + start_state + " "
         ues_thr_rl[action] += thr_rl
 
         '''
@@ -259,6 +261,9 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots_test:
+            if string_states == "G B G B G B G B G G ":
+                stop = 1
+            string_states = ""
             reward_optimal = 0
             for i in range(0, len(pf_thr_noavg)):
                 if pf_thr_noavg[i] == 0:
@@ -324,7 +329,8 @@ class UserScheduling(object):
             if option == 'test':
                 ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_noavg = copy.deepcopy(ues_thr_ri_ti_global_noavg).flatten()
-
+                if ues_ri_ti_thr[action] == 0:
+                    ues_ri_ti_thr[action] = 0.00001
                 ues_ri_ti_0 = rates[action] / ues_ri_ti_thr[action]
 
                 array = list(copy.deepcopy(actions_array))
