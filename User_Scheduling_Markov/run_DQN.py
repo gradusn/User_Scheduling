@@ -23,7 +23,7 @@ property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 n_UEs = 2
 
-max_episodes = 50000000
+max_episodes = 5000000
 max_test = 150000
 
 def update():
@@ -75,11 +75,13 @@ def test():
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
     RL.load_model()
-    enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 1, dtype=float)
+    enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 0, dtype=float)
+    enviroment_DQN.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
 
     for iter in range(0,1):
-        string_pf = "DQN_SU_simple_15ti_pf_q09_p01_lr001_rd06.csv"
-        string_rl = "DQN_SU_simple_15tti_rl_q09_p01_lr001_rd06.csv"
+        string_pf = "DQN_SU_simple_5ti_pf_q09_p01_lr001_rd06_for_no_avg.csv"
+        string_rl = "DQN_SU_simple_5tti_rl_q09_p01_lr001_rd06_for_no_avg.csv"
+
         for episode in range(max_test):
 
             timer_tti += 1
@@ -96,7 +98,8 @@ def test():
 
             if done:
                 timer_tti = 0
-                enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 1, dtype=float)
+                enviroment_DQN.ues_thr_ri_ti_global = np.full((1, n_UEs), 0, dtype=float)
+                enviroment_DQN.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
 
         print('testing ' + str(iter) + ' over')
         with open(string_rl, "a") as thr:
