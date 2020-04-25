@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 10
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -139,7 +139,7 @@ class UserScheduling(object):
     def reset(self, channel_state):
         global Throughputs
         global array_thr_rl
-        array_thr_rl = np.full((1, n_UEs), 1, dtype=float).flatten()
+        array_thr_rl = np.full((1, n_UEs), 0, dtype=float).flatten()
         Throughputs = np.full((1, n_UEs), 1, dtype=float)
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
@@ -184,6 +184,7 @@ class UserScheduling(object):
 
         R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
 
+        print(str(observation[1])+ " " + str(action) + " " +  str(observation[0]))
         #ues_thr_rl = copy.deepcopy(observation[0])
         #ues_thr_rl = ues_thr_rl[:3].flatten()
         slots = copy.deepcopy(observation[0])
@@ -202,6 +203,14 @@ class UserScheduling(object):
 
         array_thr_rl[action] += thr_rl
 
+        #print(observation[0])
+        next_channel_state = channel_chain.next_state(state)
+
+        if ((slots == [0, 1]).all() and  (gbslots == [0, 2]).all() and observation[1] == 'G B 2' and action == 0):
+            stop = 1
+
+
+
         for i in array:
             if (ues_thr_rl[i] != 1):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
@@ -219,9 +228,13 @@ class UserScheduling(object):
         # reward function
         reward = 0
         for i in range(0, len(array_thr_rl)):
-            reward = reward + float(np.log2(array_thr_rl[i]))
+            if (array_thr_rl[i] == 0):
+                reward = reward + 0
+            else:
+                reward = reward + float(np.log2(array_thr_rl[i]))
 
-        next_channel_state = channel_chain.next_state(state)
+
+
 
         if timer_tti == max_time_slots:
             channels = self.create_channel(next_channel_state, 1)
