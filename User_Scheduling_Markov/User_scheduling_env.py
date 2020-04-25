@@ -149,7 +149,7 @@ class UserScheduling(object):
                 gb_slots[i] = 0
             else:
                 gb_slots[i] = 1
-        observations = np.array([array_slots, channel_state, gb_slots], dtype=object)
+        observations = np.array([array_thr_rl, channel_state], dtype=object)
 
 
         global ues_thr_random_global
@@ -184,33 +184,28 @@ class UserScheduling(object):
 
         R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
 
-        print(str(observation[1])+ " " + str(action) + " " +  str(observation[0]))
+        #print(str(observation[1])+ " " + str(action) + " " +  str(observation[0]))
         #ues_thr_rl = copy.deepcopy(observation[0])
         #ues_thr_rl = ues_thr_rl[:3].flatten()
-        slots = copy.deepcopy(observation[0])
-        gbslots = copy.deepcopy(observation[2]).flatten()
-        gb_channels = copy.deepcopy(observation[1]).split()
+        #slots = copy.deepcopy(observation[0])
+        #gbslots = copy.deepcopy(observation[2]).flatten()
+        #gb_channels = copy.deepcopy(observation[1]).split()
         #t = observation[1]
-        slots = slots.flatten()
+        #slots = slots.flatten()
         #gbslots = gbslots.flatten()
-        ues_thr_rl = Throughputs[:3].flatten()
-
+        ues_thr_rl = observation[0].flatten()
 
         thr_rl = R[0]*1000/1000000
 
         array = list(np.arange(n_UEs))
         array.remove(action)
 
-        array_thr_rl[action] += thr_rl
+        ues_thr_rl[action] += thr_rl
 
         #print(observation[0])
         next_channel_state = channel_chain.next_state(state)
 
-        if ((slots == [0, 1]).all() and  (gbslots == [0, 2]).all() and observation[1] == 'G B 2' and action == 0):
-            stop = 1
-
-
-
+        '''
         for i in array:
             if (ues_thr_rl[i] != 1):
                 ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
@@ -223,18 +218,14 @@ class UserScheduling(object):
         else:
             ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
         slots[action] = 0
-
-        Throughputs = ues_thr_rl
+        '''
         # reward function
         reward = 0
-        for i in range(0, len(array_thr_rl)):
-            if (array_thr_rl[i] == 0):
+        for i in range(0, len(ues_thr_rl)):
+            if (ues_thr_rl[i] == 0):
                 reward = reward + 0
             else:
-                reward = reward + float(np.log2(array_thr_rl[i]))
-
-
-
+                reward = reward + float(np.log2(ues_thr_rl[i]))
 
         if timer_tti == max_time_slots:
             channels = self.create_channel(next_channel_state, 1)
@@ -242,19 +233,11 @@ class UserScheduling(object):
             done = True
 
         else:
-
-            channels = self.create_channel(next_channel_state, timer_tti+1)
-            gb_channels = channels.split()
             done = False
-            for i in range(n_UEs):
-                if gb_channels[i] == 'G':
-                    gbslots[i] = 0
-                else:
-                    gbslots[i] += 1
+            channels = self.create_channel(next_channel_state, timer_tti+1)
+            s_ = np.array([ues_thr_rl, channels], dtype=object)
 
-            s_ = np.array([slots, channels, gbslots], dtype=object)
-
-        return s_, reward, next_channel_state,  done
+        return s_, reward, next_channel_state, done
 
     def step_test(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
