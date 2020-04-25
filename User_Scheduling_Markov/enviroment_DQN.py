@@ -261,7 +261,7 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots_test:
-            if string_states == "G B G B G B G B G G ":
+            if string_states == "G B G B G B G B G B ":
                 stop = 1
             string_states = ""
             reward_optimal = 0
