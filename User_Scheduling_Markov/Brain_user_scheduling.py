@@ -64,8 +64,8 @@ qtable_SU_example_10tti_quant2_rev4
 '''
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.1, reward_decay=0.95, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
-                 epsilon_decay=0.0000001):
+    def __init__(self, actions, learning_rate=0.05, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+                 epsilon_decay=0.0000005):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
@@ -255,10 +255,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_sum_thr.pkl")
+        self.q_table.to_pickle("qtable_SU_example_5tti_sum_thr_noquant2_5militer_lr005_r09.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_sum_thr.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_5tti_sum_thr_noquant2_5militer_lr005_r09.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:

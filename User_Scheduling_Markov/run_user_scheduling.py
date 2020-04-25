@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 25000000
+max_episodes = 5000000
 max_runs_stats = 500
 max_test = 100000
 
