@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 5000000
+max_episodes = 7000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -104,7 +104,7 @@ def test():
             print("test " + str(episode))
 
             action = RL.choose_action_test(str(observation))
-            observation_, start_state, done, finish_test = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
+            observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
 
             # swap observation
             observation = observation_
@@ -114,9 +114,6 @@ def test():
                 timer_tti = 1
                 User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
                 User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
-
-            if finish_test == 1:
-                break;
 
         print('testing ' + str(iter) + ' over')
 
