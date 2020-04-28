@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 7000000
+max_episodes = 10000000
 max_runs_stats = 500
 max_test = 100000
 
@@ -89,16 +89,14 @@ def test():
 
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
-    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
-    User_scheduling_env.ues_thr_ri_ti_global = np.full((1, n_UEs), 0.00001, dtype=float)
-    User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_10tti_pf_50RB_diff_gains_win10" + str(
-            iter) + ".csv"
-        string_rl = "q_learning_SU_10tti_rl_gb_quant2_0_5.csv"
-        string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
-        string_gg = "GG_comaprison_0_5.csv"
+        string_pf = "q_learning_SU_5tti_pf_noavg.csv"
+        string_rl = "q_learning_SU_5tti_rl_noquant2_rewardlast_rd09_lr001_p01q09.csv"
+        #string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
 
         for episode in range(max_test):
             print("test " + str(episode))
@@ -112,28 +110,21 @@ def test():
 
             if done:
                 timer_tti = 1
-                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
-                User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
 
         print('testing ' + str(iter) + ' over')
-
-        count_GG_rl = User_scheduling_env.count_GG_rl
-        count_GG_pf = User_scheduling_env.count_GG_pf
-        array_GG = [count_GG_rl, count_GG_pf]
-        #observations = User_scheduling_env.q_table
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
             thr_csv.writerow(User_scheduling_env.metric_rl)
             thr.close()
-        with open(string_pf_short, "a") as thr:
+        with open(string_pf, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
             thr_csv.writerow(User_scheduling_env.metric_pf_short)
             thr.close()
-        with open(string_gg, "a") as thr:
-            thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(array_GG)
-            thr.close()
+
 
 
 
@@ -221,8 +212,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
