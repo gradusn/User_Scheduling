@@ -200,16 +200,17 @@ class UserScheduling(object):
         ues_thr_rl[action] += thr_rl
         # reward function
         reward = 0
-        for i in range(0, len(ues_thr_rl)):
-            if ues_thr_rl[i] == 0:
-                reward = reward + 0
-            else:
-                reward = reward + float(np.log2(ues_thr_rl[i]))
 
         next_channel_state = channel_chain.next_state(state)
         channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots:
+            reward = 0
+            for i in range(0, len(ues_thr_rl)):
+                if ues_thr_rl[i] == 0:
+                    reward = reward + 0
+                else:
+                    reward = reward + float(np.log2(ues_thr_rl[i]))
             channels = self.create_channel(next_channel_state)
             s_ = self.reset(channels)
             done = True
@@ -261,7 +262,7 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state)
 
         if timer_tti == max_time_slots_test:
-            if string_states == "G B G B G B G B G B ":
+            if string_states == "G B G B G B G G G G ":
                 stop = 1
             string_states = ""
             reward_optimal = 0
@@ -269,7 +270,7 @@ class UserScheduling(object):
                 if pf_thr_noavg[i] == 0:
                     reward_optimal = reward_optimal + 0
                 else:
-                    reward_optimal = reward_optimal + float(np.log2(pf_thr_noavg[i]))
+                    reward_optimal = reward_optimal + float(np.log2(pf_thr_noavg[i] * 1000 / 1000000))
 
             metric_pf.append(reward_optimal)
 
@@ -329,13 +330,11 @@ class UserScheduling(object):
             if option == 'test':
                 ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_noavg = copy.deepcopy(ues_thr_ri_ti_global_noavg).flatten()
-                if ues_ri_ti_thr[action] == 0:
-                    ues_ri_ti_thr[action] = 0.00001
-                ues_ri_ti_0 = rates[action] / ues_ri_ti_thr[action]
 
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
-                R_user = rates[action] * 1000 / 1000000
+                #R_user = rates[action] * 1000 / 1000000
+                R_user = rates[action]
                 ues_ri_ti_thr_noavg[action] += R_user
 
                 if ues_ri_ti_thr[action] == 0:

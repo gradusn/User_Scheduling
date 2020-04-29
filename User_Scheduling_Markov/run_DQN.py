@@ -23,7 +23,7 @@ property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 n_UEs = 2
 
-max_episodes = 30000000
+max_episodes = 15000000
 max_test = 150000
 
 def update():
