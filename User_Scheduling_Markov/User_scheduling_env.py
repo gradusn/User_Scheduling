@@ -185,15 +185,6 @@ class UserScheduling(object):
 
         R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
 
-        #print(str(observation[1])+ " " + str(action) + " " +  str(observation[0]))
-        #ues_thr_rl = copy.deepcopy(observation[0])
-        #ues_thr_rl = ues_thr_rl[:3].flatten()
-        #slots = copy.deepcopy(observation[0])
-        #gbslots = copy.deepcopy(observation[2]).flatten()
-        #gb_channels = copy.deepcopy(observation[1]).split()
-        #t = observation[1]
-        #slots = slots.flatten()
-        #gbslots = gbslots.flatten()
         ues_thr_rl = observation[0].flatten()
 
         thr_rl = R[0]*1000/1000000
@@ -201,25 +192,16 @@ class UserScheduling(object):
         array = list(np.arange(n_UEs))
         array.remove(action)
 
-        ues_thr_rl[action] += thr_rl
+        #ues_thr_rl[action] += thr_rl
 
-        #print(observation[0])
         next_channel_state = channel_chain.next_state(state)
 
-        '''
+
         for i in array:
-            if (ues_thr_rl[i] != 1):
-                ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
-            slots[i] += 1
+            ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
 
+        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
-
-        if (ues_thr_rl[action] == 1):
-            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        else:
-            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        slots[action] = 0
-        '''
         # reward function
         reward = 0
 
@@ -367,7 +349,7 @@ class UserScheduling(object):
         if option == 'train':
             actions = [action_rl]
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.find_optimal_action(observation, actions, option, timer_tti)
-            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, pf_thr_noavg
+            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
         else:
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.find_optimal_action(observation, actions, option, timer_tti)
             return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg
