@@ -260,7 +260,13 @@ class UserScheduling(object):
         array_rr = list(np.arange(n_UEs))
         array_rr.remove(UE_for_RR)
 
-        ues_thr_rl[action] += thr_rl
+        #ues_thr_rl[action] += thr_rl
+
+        for i in array:
+            ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
+
+        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
+
 
         for i in array_rr:
             if (ues_ri_ti_thr_rr[i] != 1):
@@ -299,11 +305,11 @@ class UserScheduling(object):
             metric_rl.append(reward)
 
             reward_optimal_short = 0
-            for i in range(0, len(pf_thr_noavg)):
+            for i in range(0, len(tmp_thr_optimal_short)):
                 if pf_thr_noavg[i] == 0:
                     reward_optimal_short = reward_optimal_short + 0
                 else:
-                    reward_optimal_short = reward_optimal_short + float(np.log2(pf_thr_noavg[i]*1000 / 1000000))
+                    reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
 
             metric_pf_short.append(reward_optimal_short)
 
@@ -385,7 +391,7 @@ class UserScheduling(object):
 
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
-                R_user = rates[action]
+                R_user = rates[action] * 1000/1000000
                 ues_ri_ti_thr_noavg[action] += R_user
                 #ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
                 if ues_ri_ti_thr_3_win[action] == 0:
