@@ -28,7 +28,7 @@ class DeepQNetwork:
             e_greedy=0.9,
             minimum_epsilon=0.1,
             max_epsilon=1.0,
-            epsilon_decay=0.0000003,
+            epsilon_decay=0.00000005,
             replace_target_iter=500,
             memory_size=1000,
             batch_size=32,
@@ -86,14 +86,14 @@ class DeepQNetwork:
 
         # ------------------ build evaluate_net ------------------
         with tf.variable_scope('eval_net'):
-            e1 = tf.layers.dense(self.s, 20, tf.nn.relu, kernel_initializer=w_initializer,
+            e1 = tf.layers.dense(self.s, 40, tf.nn.relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='e1')
             self.q_eval = tf.layers.dense(e1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='q')
 
         # ------------------ build target_net ------------------
         with tf.variable_scope('target_net'):
-            t1 = tf.layers.dense(self.s_, 20, tf.nn.relu, kernel_initializer=w_initializer,
+            t1 = tf.layers.dense(self.s_, 40, tf.nn.relu, kernel_initializer=w_initializer,
                                  bias_initializer=b_initializer, name='t1')
             self.q_next = tf.layers.dense(t1, self.n_actions, kernel_initializer=w_initializer,
                                           bias_initializer=b_initializer, name='t2')
@@ -135,6 +135,7 @@ class DeepQNetwork:
         observation = observation[np.newaxis, :]
         # forward feed the observation and get q value for every actions
         actions_value = self.sess.run(self.q_eval, feed_dict={self.s: observation})
+        print(str(actions_value))
         action = np.argmax(actions_value)
 
         return action
@@ -176,12 +177,12 @@ class DeepQNetwork:
         tvars_vals = self.sess.run(w)
         print(tvars_vals)
 
-        save_path = self.saver.save(self.sess, "model_2_ues_gb_SU_5tti_noavg_p01q01_rd09_lr001_15militer_Rlast_test7.ckpt")
+        save_path = self.saver.save(self.sess, "model_2_ues_gb_SU_5tti_noavg_p01q01_rd02_lr001_45militer_Rlast_test10.ckpt")
 
 
 
     def load_model(self):
-        self.saver.restore(self.sess, "model_2_ues_gb_SU_5tti_noavg_p01q01_rd09_lr001_15militer_Rlast_test7.ckpt")
+        self.saver.restore(self.sess, "model_2_ues_gb_SU_5tti_noavg_p01q01_rd02_lr001_45militer_Rlast_test10.ckpt")
         print("Model restored")
         w = [v for v in tf.trainable_variables() if v.name == "eval_net/q/kernel:0"][0]
         tvars_vals = self.sess.run(w)

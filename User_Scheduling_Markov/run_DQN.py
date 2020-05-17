@@ -23,7 +23,7 @@ property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 n_UEs = 2
 
-max_episodes = 15000000
+max_episodes = 45000000
 max_test = 150000
 
 def update():
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.01,
-                      reward_decay=0.9,
+                      reward_decay=0.2,
                       e_greedy=0.9,
                       replace_target_iter=200,
                       memory_size=2000,
