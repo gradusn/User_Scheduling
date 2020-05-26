@@ -36,8 +36,8 @@ algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain0 = {'G': [15, 15], 'B': [9, 9]}
-gain1 = {'G': [13, 13], 'B': [3, 3]}
+gain0 = {'G': [24, 24], 'B': [5, 5]}
+gain1 = {'G': [24, 24], 'B': [5, 5]}
 #gain2 = {'G': [11, 11], 'B': [3, 3]}
 
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
@@ -116,6 +116,7 @@ array_thr_rl = []
 array_thr_pf = []
 
 
+
 q_table = pd.DataFrame(columns=list(range(3)), dtype=np.float64)
 string_channels = ""
 
@@ -183,7 +184,7 @@ class UserScheduling(object):
         global Throughputs
         check = []
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
+        R, tmp_thr_optimal, tmp_thr_optimal_short, pf_thr_noavg = self.get_rates(observation, action, 'train', timer_tti)
 
         #print(str(observation[1])+ " " + str(action) + " " +  str(observation[0]))
         #ues_thr_rl = copy.deepcopy(observation[0])
@@ -195,8 +196,8 @@ class UserScheduling(object):
         #slots = slots.flatten()
         #gbslots = gbslots.flatten()
         ues_thr_rl = observation[0].flatten()
-
-        thr_rl = R[0]*1000/1000000
+        thr_rl = R[0]/8
+        #thr_rl = R[0]*1000/1000000
 
         array = list(np.arange(n_UEs))
         array.remove(action)
@@ -392,9 +393,9 @@ class UserScheduling(object):
         max_ri_ti_action = 0
         for action in actions_array:
             UE_1 = action
-            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
-            iTbs = McsToItbsDl[MCS]
-            rates.append(TransportBlockSizeTable[iTbs])
+            #MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            #iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[scalar_gain_array[UE_1]])
             #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
             if option == 'test':
                 #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()

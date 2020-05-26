@@ -32,7 +32,7 @@ beta_GB = 0.9
 n_UEs = 2
 
 
-property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability1 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
@@ -212,8 +212,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
