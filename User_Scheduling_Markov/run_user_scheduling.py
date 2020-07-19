@@ -32,16 +32,18 @@ beta_GB = 0.9
 n_UEs = 2
 
 
-property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability1 = {'G': [0.8, 0.2], 'B': [0.2, 0.8]}
 property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
 corr_probability = 0.8
 
-max_episodes = 10000000
+max_episodes = 35000000
 max_runs_stats = 500
 max_test = 100000
+table_UE1 = []
+table_UE2 = []
 
 
 
@@ -52,19 +54,27 @@ def update():
     start_state = 'G G'
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
+    if int(observation[0][0]) not in table_UE1:
+        table_UE1.append(int(observation[0][0]))
+    if int(observation[0][1]) not in table_UE2:
+        table_UE2.append(int(observation[0][1]))
     for episode in range(max_episodes):
         print("train " + str(episode))
 
-
         # RL choose action based on observation
-        action = RL.choose_action(str(observation), timer_tti)
-
+        states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1])) + " " + str(observation[1])
+        action = RL.choose_action(states_to_table, timer_tti)
 
         # RL take action and get next observation and reward
         observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
 
         # RL learn from this transition
-        RL.learn(observation, action, reward, str(observation_), timer_tti, episode, max_episodes)
+        if int(observation_[0][0]) not in table_UE1:
+            table_UE1.append(int(observation_[0][0]))
+        if int(observation_[0][1]) not in table_UE2:
+            table_UE2.append(int(observation_[0][1]))
+        states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
+        RL.learn(states_to_table, action, reward, states_to_table_2, timer_tti, episode, max_episodes)
 
         # swap observation
 
@@ -77,7 +87,7 @@ def update():
             timer_tti = 1
 
     # end of game
-    RL.save_table()
+    RL.save_table(table_UE1, table_UE2)
     print('training over')
 
 def test():
@@ -94,14 +104,17 @@ def test():
     User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_5tti_pf_noavg.csv"
-        string_rl = "q_learning_SU_5tti_rl_noquant2_rewardlast_rd09_lr001_p01q09.csv"
+        string_pf = "q_learning_SU_5tti_pf_1_test4.csv"
+        string_rl = "q_learning_SU_5tti_rl_1_test4.csv"
         #string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
 
         for episode in range(max_test):
             print("test " + str(episode))
+            states_to_table = str(int(observation[0][0])) + " " + str(int(observation[0][1])) + " " + str(
+                observation[1])
 
-            action = RL.choose_action_test(str(observation))
+            #action = RL.choose_action_test(str(observation))
+            action = RL.choose_action_test(states_to_table)
             observation_, start_state, done = env.step_test(action, observation, start_state, timer_tti, channel_chain, episode)
 
             # swap observation

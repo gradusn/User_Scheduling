@@ -65,7 +65,7 @@ qtable_SU_example_10tti_quant2_rev4
 
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.1,
-                 epsilon_decay=0.0000003):
+                 epsilon_decay=0.00000008):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
@@ -255,11 +255,30 @@ class QLearningTable:
             -self.epsilon_decay * episode)
         print(self.epsilon)
 
-    def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_5tti_sum_thr_noquant2_10militer_lr01_r09_noCurR_avgsum.pkl")
+    def save_table(self, table1, table2):
+        self.q_table.to_pickle("qtable_SU_example_5tti_35_militer_gains_26_1_test4_0802_0901.pkl")
+        np.save("table_ue1_with_B_for1_test4.npy", table1)
+        np.save("table_ue2_with_B_for_test4.npy", table2)
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_5tti_sum_thr_noquant2_10militer_lr01_r09_noCurR_avgsum.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_5tti_35_militer_gains_26_1_test4_0802_0901.pkl")
+        #tmp_table_ue1 = np.load("table_ue1_with_B_for1_test3.npy")
+        #tmp_table_ue2 = np.load("table_ue2_with_B_for_test3.npy")
+        '''
+        table_RL = np.zeros((len(tmp_table_ue1),len(tmp_table_ue2)))
+        for i in range(0, len(tmp_table_ue1)):
+            for j in range(0,len(tmp_table_ue2)):
+                find = str(tmp_table_ue1[i]) + " " +str(tmp_table_ue2[j]) + " "+ str('G B')
+                if find  in self.q_table.index:
+                    state_action = self.q_table.loc[find, :]
+                    table_RL[i][j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
+        #np.savetxt("table_RL_GB.csv", table_RL, delimiter=',')
+        #np.savetxt("tmp_table_ue1.csv", tmp_table_ue1, delimiter=',')
+        #np.savetxt("tmp_table_ue2.csv", tmp_table_ue2, delimiter=',')
+
+        #print(table_RL)
+        '''
+
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:

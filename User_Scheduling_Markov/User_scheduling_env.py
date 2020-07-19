@@ -36,8 +36,12 @@ algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain0 = {'G': [15, 15], 'B': [9, 9]}
-gain1 = {'G': [13, 13], 'B': [3, 3]}
+gain0 = {'G': [26, 26], 'B': [1, 1]}
+gain1 = {'G': [26, 26], 'B': [1, 1]}
+
+#gain0 = {'G': [24, 24], 'B': [5, 5]}
+#gain1 = {'G': [24, 24], 'B': [5, 5]}
+
 #gain2 = {'G': [11, 11], 'B': [3, 3]}
 
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
@@ -76,8 +80,8 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 10
-time_window_short = 10
+time_window = 5
+time_window_short = 5
 time_window_large = 1000
 time_window_test = 20
 diff = []
@@ -133,8 +137,8 @@ class UserScheduling(object):
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
     def create_channel(self, channels_gain, timer_tti):
-        return str(channels_gain)+ " "+str(timer_tti)
-
+        #return str(channels_gain)+ " "+str(timer_tti)
+        return str(channels_gain)
 
 
     def reset(self, channel_state):
@@ -187,7 +191,7 @@ class UserScheduling(object):
 
         ues_thr_rl = observation[0].flatten()
 
-        thr_rl = R[0]*1000/1000000
+        thr_rl = R[0]/8
 
         array = list(np.arange(n_UEs))
         array.remove(action)
@@ -251,8 +255,8 @@ class UserScheduling(object):
 
         ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
 
-        thr_rl = R[action] * 1000 / 1000000
-        thr_rr = R[UE_for_RR] * 1000 / 1000000
+        thr_rl = R[action]/8
+        thr_rr = R[UE_for_RR]/8
 
         array = list(np.arange(n_UEs))
         array.remove(action)
@@ -269,15 +273,11 @@ class UserScheduling(object):
 
 
         for i in array_rr:
-            if (ues_ri_ti_thr_rr[i] != 1):
-                ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
+            ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
 
-        if (ues_ri_ti_thr_rr[UE_for_RR] == 1):
-            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+        ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
                         1 / time_window_short) * thr_rr
-        else:
-            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
-                        1 / time_window_short) * thr_rr
+
 
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
         ues_thr_ri_ti_global_noavg = pf_thr_noavg
@@ -315,7 +315,10 @@ class UserScheduling(object):
 
             reward_rr = 0
             for i in range(0, len(ues_ri_ti_thr_rr)):
-                reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
+                if (ues_ri_ti_thr_rr[i] == 0):
+                    reward_rr = reward_rr + 0
+                else:
+                    reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
 
             metric_rr.append(reward_rr)
             string_states = ""
@@ -380,9 +383,9 @@ class UserScheduling(object):
         max_ri_ti_action = 0
         for action in actions_array:
             UE_1 = action
-            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
-            iTbs = McsToItbsDl[MCS]
-            rates.append(TransportBlockSizeTable[iTbs])
+            #MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            #iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[scalar_gain_array[UE_1]])
             #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
             if option == 'test':
                 #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
@@ -391,11 +394,11 @@ class UserScheduling(object):
 
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
-                R_user = rates[action] * 1000/1000000
+                R_user = rates[action]/8
                 ues_ri_ti_thr_noavg[action] += R_user
                 #ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
                 if ues_ri_ti_thr_3_win[action] == 0:
-                    ues_ri_ti_0_3_win = R_user / 0.00001
+                    ues_ri_ti_0_3_win = R_user/0.0001
                 else:
                     ues_ri_ti_0_3_win = R_user / ues_ri_ti_thr_3_win[action]
 
