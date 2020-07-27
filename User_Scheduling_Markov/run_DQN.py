@@ -20,10 +20,10 @@ alpha_GB = 0.9
 beta_GB = 0.9
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
-property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
-n_UEs = 2
+property_to_probability3 = {'G': [0.2, 0.8], 'B': [0.8, 0.2]}
+n_UEs = 3
 
-max_episodes = 45000000
+max_episodes = 160000000
 max_test = 150000
 
 def update():
@@ -32,7 +32,7 @@ def update():
     global start_state
     start_time = time.time()
     timer_tti = 0
-    start_state = 'G G'
+    start_state = 'G G G'
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
 
@@ -71,7 +71,7 @@ def test():
     global start_state
 
     timer_tti = 0
-    start_state = 'G G'
+    start_state = 'G G G'
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
     RL.load_model()
@@ -139,7 +139,7 @@ def Create_transtion_matrix(states):
     global property_to_probability3
 
 
-    global_transition = [property_to_probability1, property_to_probability2]
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
     transition_matrix = []
     row_transition_matrix = []
     probability = 1
@@ -167,23 +167,32 @@ if __name__ == "__main__":
                     'B B',
                     ]
 
-    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
+    states_3_ues = ['G G G',
+                    'G G B',
+                    'G B G',
+                    'B G G',
+                    'G B B',
+                    'B G B',
+                    'B B G',
+                    'B B B']
+
+    transition_matrix_channel = Create_transtion_matrix(states_3_ues)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states_2_ues)
+                                states=states_3_ues)
 
     env = UserScheduling()
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
-                      learning_rate=0.01,
-                      reward_decay=0.2,
+                      learning_rate=0.001,
+                      reward_decay=0.6,
                       e_greedy=0.9,
                       replace_target_iter=200,
                       memory_size=2000,
                       # output_graph=True
                       )
 
-    #update()
-    test()
+    update()
+    #test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)
