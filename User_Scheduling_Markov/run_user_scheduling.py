@@ -39,7 +39,7 @@ property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 corr_probability = 0.8
 
-max_episodes = 35000000
+max_episodes = 15000000
 max_runs_stats = 500
 max_test = 100000
 table_UE1 = []
@@ -226,8 +226,8 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
