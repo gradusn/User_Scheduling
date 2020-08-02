@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 3
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -80,10 +80,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 3
-time_window_short = 3
+time_window = 5
+time_window_short = 5
 time_window_large = 1000
-time_window_test = 3
+time_window_test = 5
 diff = []
 metric_rl = []
 metric_pf = []
@@ -93,6 +93,7 @@ metric_rr = []
 mean_rl = []
 mean_pf = []
 string_states = ""
+tmp_string = ""
 
 
 Max_Cqi = 16
@@ -120,7 +121,7 @@ array_thr_rl = []
 array_thr_pf = []
 
 
-q_table = pd.DataFrame(columns=list(range(3)), dtype=np.float64)
+q_table = pd.DataFrame(columns=list(range(2)), dtype=np.float64)
 string_channels = ""
 
 class UserScheduling(object):
@@ -247,8 +248,11 @@ class UserScheduling(object):
         global metric_rr
         global ues_thr_ri_ti_global_noavg
         global string_states
+        global tmp_string
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.get_rates(observation, action, 'test', timer_tti)
+        #tmp_string = tmp_string + str(observation[1]) + " "
+
         print(str(observation) + str(action) + str(action_pf))
         string_states = string_states + state + " "
         ues_thr_rl = observation[0].flatten()
@@ -313,6 +317,9 @@ class UserScheduling(object):
 
             metric_pf_short.append(reward_optimal_short)
 
+            if ((float(reward) - float(reward_optimal_short))/float(reward_optimal_short)*100 >= 5):
+                self.check_state(string_states, reward, reward_optimal_short)
+
             reward_rr = 0
             for i in range(0, len(ues_ri_ti_thr_rr)):
                 if (ues_ri_ti_thr_rr[i] == 0):
@@ -336,16 +343,17 @@ class UserScheduling(object):
         if channels not in q_table.index:
             q_table = q_table.append(
                 pd.Series(
-                    [0] * 3,
+                    [0] * 2,
                     index=q_table.columns,
                     name=channels,
                 )
             )
-            q_table.loc[channels, 0] += 1
-            q_table.loc[channels, 1] = np.round(reward_rl, 5)
-            q_table.loc[channels, 2] = np.round(reward_pf, 5)
+            q_table.loc[channels, 0] += np.round(reward_rl, 5)
+            q_table.loc[channels, 1] += np.round(reward_pf, 5)
+            #q_table.loc[channels, 2] =
         else:
-            q_table.loc[channels, 0] += 1
+            tmp = 1
+
 
 
 

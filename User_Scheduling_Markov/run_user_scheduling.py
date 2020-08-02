@@ -32,14 +32,14 @@ beta_GB = 0.9
 n_UEs = 2
 
 
-property_to_probability1 = {'G': [0.8, 0.2], 'B': [0.2, 0.8]}
-property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
+property_to_probability1 = {'G': [1, 0], 'B': [1, 0]}
+property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
 corr_probability = 0.8
 
-max_episodes = 15000000
+max_episodes = 20000000
 max_runs_stats = 500
 max_test = 100000
 table_UE1 = []
@@ -104,8 +104,8 @@ def test():
     User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_5tti_pf_1_test4.csv"
-        string_rl = "q_learning_SU_5tti_rl_1_test4.csv"
+        string_pf = "q_learning_SU_5tti_pf_1_noquant.csv"
+        string_rl = "q_learning_SU_5tti_rl_1_noquant.csv"
         #string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
 
         for episode in range(max_test):
