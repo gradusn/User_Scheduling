@@ -29,12 +29,12 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-n_UEs = 2
+n_UEs = 3
 
 
-property_to_probability1 = {'G': [1, 0], 'B': [1, 0]}
+property_to_probability1 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
-property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
+property_to_probability3 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 
 
 corr_probability = 0.8
@@ -44,6 +44,8 @@ max_runs_stats = 500
 max_test = 100000
 table_UE1 = []
 table_UE2 = []
+table_UE3 = []
+
 
 
 
@@ -51,18 +53,22 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    start_state = 'G G'
+    start_state = 'G G G'
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
     if int(observation[0][0]) not in table_UE1:
         table_UE1.append(int(observation[0][0]))
     if int(observation[0][1]) not in table_UE2:
         table_UE2.append(int(observation[0][1]))
+    if int(observation[0][2]) not in table_UE3:
+        table_UE3.append(int(observation[0][2]))
     for episode in range(max_episodes):
         print("train " + str(episode))
 
         # RL choose action based on observation
-        states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1])) + " " + str(observation[1])
+        states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1]))+" "+str(int(observation[0][2])) + " " + str(observation[1])
+        #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1])) + " " + str(observation[1])
+
         action = RL.choose_action(states_to_table, timer_tti)
 
         # RL take action and get next observation and reward
@@ -73,7 +79,12 @@ def update():
             table_UE1.append(int(observation_[0][0]))
         if int(observation_[0][1]) not in table_UE2:
             table_UE2.append(int(observation_[0][1]))
-        states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
+        if int(observation_[0][2]) not in table_UE3:
+            table_UE3.append(int(observation_[0][2]))
+        #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
+
+        states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1]))+" "+str(int(observation[0][2]))  + " " + str(observation_[1])
+
         RL.learn(states_to_table, action, reward, states_to_table_2, timer_tti, episode, max_episodes)
 
         # swap observation
@@ -162,7 +173,9 @@ def Create_transtion_matrix(states):
     global property_to_probability3
 
 
-    global_transition = [property_to_probability1, property_to_probability2]
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    #global_transition = [property_to_probability1, property_to_probability2]
+
     transition_matrix = []
     row_transition_matrix = []
     probability = 1
@@ -218,9 +231,9 @@ if __name__ == "__main__":
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
+    transition_matrix_channel = Create_transtion_matrix(states)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states_2_ues)
+                                states=states)
 
 
     env = UserScheduling()

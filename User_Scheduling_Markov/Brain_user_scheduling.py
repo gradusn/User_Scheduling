@@ -20,6 +20,8 @@ import csv
 import MarkovChain
 
 max_testing_episodes = 200000
+count = 0
+count_2 = 0
 '''
 Trying to solve the learning problem
 reward_decay = 0.1
@@ -231,6 +233,13 @@ class QLearningTable:
 
 
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
+        global count
+        global count_2
+        if timer_tti+1 == 3 and s_ not in self.q_table.index:
+            count = count +1
+        if timer_tti+1 == 2 and s_ not in self.q_table.index:
+            count_2 = count_2+1
+
         self.check_state_exist(s_, timer_tti)
         q_predict = self.q_table.loc[str(s), a]
         check = s[1]
@@ -282,6 +291,7 @@ class QLearningTable:
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
+
             # append new state to q table
             self.q_table = self.q_table.append(
                 pd.Series(

@@ -23,11 +23,11 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 5
+max_time_slots = 3
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 2
+n_UEs = 3
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -38,6 +38,8 @@ channel_vectors = np.array(
 
 gain0 = {'G': [26, 26], 'B': [1, 1]}
 gain1 = {'G': [26, 26], 'B': [1, 1]}
+gain2 = {'G': [26, 26], 'B': [1, 1]}
+
 
 #gain0 = {'G': [24, 24], 'B': [5, 5]}
 #gain1 = {'G': [24, 24], 'B': [5, 5]}
@@ -47,8 +49,8 @@ gain1 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-#gain = [gain0, gain1, gain2]
-gain = [gain0, gain1]
+gain = [gain0, gain1, gain2]
+#gain = [gain0, gain1]
 
 count_GG_rl = 0
 count_GG_pf = 0
@@ -58,7 +60,7 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-n_actions = 2
+n_actions = 3
 
 logthr_rl = []
 logthr_random = []
@@ -80,10 +82,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 5
-time_window_short = 5
+time_window = 3
+time_window_short = 3
 time_window_large = 1000
-time_window_test = 5
+time_window_test = 3
 diff = []
 metric_rl = []
 metric_pf = []
@@ -119,6 +121,7 @@ counter_avg = 0
 Throughputs = []
 array_thr_rl = []
 array_thr_pf = []
+count  = 0
 
 
 q_table = pd.DataFrame(columns=list(range(2)), dtype=np.float64)
@@ -187,6 +190,7 @@ class UserScheduling(object):
         global old_optimal_action
         global Throughputs
         check = []
+        global count
 
         R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
 
@@ -224,8 +228,10 @@ class UserScheduling(object):
 
         else:
             done = False
+
             channels = self.create_channel(next_channel_state, timer_tti+1)
             s_ = np.array([ues_thr_rl, channels], dtype=object)
+
 
         return s_, reward, next_channel_state, done
 
