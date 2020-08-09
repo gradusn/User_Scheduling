@@ -23,11 +23,11 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 3
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 3
+n_UEs = 2
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -49,8 +49,8 @@ gain2 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-gain = [gain0, gain1, gain2]
-#gain = [gain0, gain1]
+#gain = [gain0, gain1, gain2]
+gain = [gain0, gain1]
 
 count_GG_rl = 0
 count_GG_pf = 0
@@ -60,7 +60,7 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-n_actions = 3
+n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -82,10 +82,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 3
-time_window_short = 3
+time_window = 5
+time_window_short = 5
 time_window_large = 1000
-time_window_test = 3
+time_window_test = 5
 diff = []
 metric_rl = []
 metric_pf = []
@@ -141,8 +141,8 @@ class UserScheduling(object):
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
     def create_channel(self, channels_gain, timer_tti):
-        #return str(channels_gain)+ " "+str(timer_tti)
-        return str(channels_gain)
+        return str(channels_gain)+ " "+str(timer_tti)
+        #return str(channels_gain)
 
 
     def reset(self, channel_state):
@@ -316,7 +316,7 @@ class UserScheduling(object):
 
             reward_optimal_short = 0
             for i in range(0, len(tmp_thr_optimal_short)):
-                if pf_thr_noavg[i] == 0:
+                if tmp_thr_optimal_short[i] == 0:
                     reward_optimal_short = reward_optimal_short + 0
                 else:
                     reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
