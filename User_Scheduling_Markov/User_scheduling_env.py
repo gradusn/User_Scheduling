@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 10
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -36,8 +36,8 @@ algorithm = ['rl', 'random', 'optimal', 'ri/ti']
 channel_vectors = np.array(
     [[1, 0], [0, 1], [1 / math.sqrt(2), 1 / math.sqrt(2)], [-1 / math.sqrt(2), -1 / math.sqrt(2)]])
 
-gain0 = {'G': [15, 15], 'B': [9, 9]}
-gain1 = {'G': [13, 13], 'B': [3, 3]}
+gain0 = {'G': [26, 26], 'B': [1, 1]}
+gain1 = {'G': [26, 26], 'B': [1, 1]}
 #gain2 = {'G': [11, 11], 'B': [3, 3]}
 
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
@@ -74,10 +74,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 10
-time_window_short = 10
+time_window = 5
+time_window_short = 5
 time_window_large = 1000
-time_window_test = 20
+time_window_test = 5
 diff = []
 metric_rl = []
 metric_pf = []
@@ -151,9 +151,9 @@ class UserScheduling(object):
         global Throughputs
         global Throughputs_for_testing
         if test == 0:
-            Throughputs = np.full((1, n_UEs), 1, dtype=float)
+            Throughputs = np.full((1, n_UEs), 0, dtype=float)
         else:
-            Throughputs_for_testing = np.full((1, n_UEs), 1, dtype=float)
+            Throughputs_for_testing = np.full((1, n_UEs), 0, dtype=float)
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
         gb_channels = channel_state.split()
@@ -162,7 +162,7 @@ class UserScheduling(object):
                 gb_slots[i] = 0
             else:
                 gb_slots[i] = 1
-        observations = np.array([array_slots, channel_state, gb_slots], dtype=object)
+        observations = np.array([Throughputs, channel_state], dtype=object)
 
 
         global ues_thr_random_global
@@ -197,49 +197,45 @@ class UserScheduling(object):
         check = []
         global count
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'train', timer_tti)
         tmp_string = observation[1].split()
         if timer_tti == max_time_slots:
             string_channels = string_channels + str(tmp_string[0]) + " " + str(tmp_string[1])
         else:
             string_channels = string_channels + str(tmp_string[0])+" "+str(tmp_string[1]) + "_"
-        slots = copy.deepcopy(observation[0])
-        gbslots = copy.deepcopy(observation[2]).flatten()
-        gb_channels = copy.deepcopy(observation[1]).split()
+        #slots = copy.deepcopy(observation[0])
+        #gbslots = copy.deepcopy(observation[2]).flatten()
+        #gb_channels = copy.deepcopy(observation[1]).split()
         #t = observation[1]
-        slots = slots.flatten()
+        #slots = slots.flatten()
         #gbslots = gbslots.flatten()
-        ues_thr_rl = Throughputs[:3].flatten()
+        ues_thr_rl = observation[0].flatten()
 
-
-        thr_rl = R[action]*1000/1000000
+        thr_rl = R[0]/8
 
         array = list(np.arange(n_UEs))
         array.remove(action)
 
         for i in array:
-            if (ues_thr_rl[i] != 1):
-                ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
-            slots[i] += 1
+            ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
 
 
 
-        if (ues_thr_rl[action] == 1):
-            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        else:
-            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        slots[action] = 0
+        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
-        Throughputs = ues_thr_rl
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
         # reward function
         reward = 0
-        for i in range(0, len(ues_thr_rl)):
-            reward = reward + float(np.log2(ues_thr_rl[i]))
 
         next_channel_state = channel_chain.next_state(state)
         finish_5000 = 0
         if timer_tti == max_time_slots:
+            reward = 0
+            for i in range(0, len(ues_thr_rl)):
+                if (ues_thr_rl[i] == 0):
+                    reward = reward + 0
+                else:
+                    reward = reward + float(np.log2(ues_thr_rl[i]))
 
             channels = self.create_channel(next_channel_state, 1)
             s_ = self.reset(channels, 0)
@@ -248,19 +244,11 @@ class UserScheduling(object):
             string_channels = ""
 
             done = True
-
         else:
 
             channels = self.create_channel(next_channel_state, timer_tti+1)
-            gb_channels = channels.split()
             done = False
-            for i in range(n_UEs):
-                if gb_channels[i] == 'G':
-                    gbslots[i] = 0
-                else:
-                    gbslots[i] += 1
-
-            s_ = np.array([slots, channels, gbslots], dtype=object)
+            s_ = np.array([ues_thr_rl, channels], dtype=object)
 
         return s_, reward, next_channel_state,  done, finish_5000
 
@@ -417,29 +405,17 @@ class UserScheduling(object):
         global reward_rr
         global reward_optimal_short
 
-        gbslots = copy.deepcopy(observation[2]).flatten()
-        gb_channels = copy.deepcopy(observation[1]).split()
+        #gbslots = copy.deepcopy(observation[2]).flatten()
+        #gb_channels = copy.deepcopy(observation[1]).split()
         finish_test = 0
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
-        #print(str(observation) + str(action) + str(action_pf))
-        #string_channels = string_channels + str(observation[0]) + " " + str(observation[1]) + "  "
-        '''
-        if str(observation[1]) == 'G G ' + str(timer_tti):
-            if action == 1:
-                count_GG_rl = count_GG_rl + 1
-            if action_pf == 1:
-                count_GG_pf = count_GG_pf + 1
-        '''
 
-        slots = copy.deepcopy(observation[0])
-        slots = slots.flatten()
-
-        ues_thr_rl = Throughputs_for_testing[:3].flatten()
+        ues_thr_rl = observation[0].flatten()
+        thr_rl = R[0] / 8
         ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
 
-        thr_rl = R[action] * 1000 / 1000000
-        thr_rr = R[UE_for_RR] * 1000 / 1000000
+        thr_rr = R[UE_for_RR]/8
 
         array = list(np.arange(n_UEs))
         array.remove(action)
@@ -448,28 +424,15 @@ class UserScheduling(object):
         array_rr.remove(UE_for_RR)
 
         for i in array_rr:
-            if (ues_ri_ti_thr_rr[i] != 1):
-                ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
+            ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
 
-        if (ues_ri_ti_thr_rr[UE_for_RR] == 1):
-            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
-                    1 / time_window_short) * thr_rr
-        else:
-            ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
+        ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
                     1 / time_window_short) * thr_rr
 
         for i in array:
-            if (ues_thr_rl[i] != 1):
-                ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
-            slots[i] += 1
+            ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
 
-        if (ues_thr_rl[action] == 1):
-            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        else:
-            ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        slots[action] = 0
-
-        Throughputs_for_testing = ues_thr_rl
+        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
         ues_thr_ri_ti_global_rr = ues_ri_ti_thr_rr
@@ -478,33 +441,36 @@ class UserScheduling(object):
         UE_for_RR = UE_for_RR % n_UEs
 
         if timer_tti == max_time_slots:
-
             reward_rl = 0
             for i in range(0, len(ues_thr_rl)):
-                reward_rl = reward_rl + float(np.log2(ues_thr_rl[i]))
+                if ues_thr_rl[i] == 0:
+                    reward_rl = reward_rl + 0
+                else:
+                    reward_rl = reward_rl + float(np.log2(ues_thr_rl[i]))
 
             reward_optimal_short = 0
             for i in range(0, len(tmp_thr_optimal_short)):
-                reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
+                if tmp_thr_optimal_short[i] == 0:
+                    reward_optimal_short = reward_optimal_short + 0
+                else:
+                    reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
 
             reward_rr = 0
             for i in range(0, len(ues_ri_ti_thr_rr)):
-                reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
+                if (ues_ri_ti_thr_rr[i] == 0):
+                    reward_rr = reward_rr + 0
+                else:
+                    reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
 
             done = True
             s_ = 0
 
 
         else:
-            gb_channels = channels.split()
             done = False
-            for i in range(n_UEs):
-                if gb_channels[i] == 'G':
-                    gbslots[i] = 0
-                else:
-                    gbslots[i] += 1
+
             channels_test = self.create_channel(channels, timer_tti + 1)
-            s_ = np.array([slots, channels_test, gbslots], dtype=object)
+            s_ = np.array([ues_thr_rl, channels_test], dtype=object)
 
         return s_, done
 
@@ -593,7 +559,7 @@ class UserScheduling(object):
         if option == 'train':
             actions = [action_rl]
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
-            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
+            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short,action_pf
         else:
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
             return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf
@@ -613,10 +579,10 @@ class UserScheduling(object):
         max_ri_ti_action = 0
         for action in actions_array:
             UE_1 = action
-            MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
-            iTbs = McsToItbsDl[MCS]
-            rates.append(TransportBlockSizeTable[iTbs])
-            #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
+            #MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
+            #iTbs = McsToItbsDl[MCS]
+            rates.append(TransportBlockSizeTable[scalar_gain_array[UE_1]])
+            #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]])
             if option == 'test':
                 #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_3_win = copy.deepcopy(ues_thr_ri_ti_global_short).flatten()
@@ -624,18 +590,17 @@ class UserScheduling(object):
 
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
-                R_user = rates[action]*1000/1000000
+                R_user = rates[action]/8
                 #ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
-                ues_ri_ti_0_3_win = R_user / ues_ri_ti_thr_3_win[action]
+                if (ues_ri_ti_thr_3_win[action] == 0):
+                    ues_ri_ti_0_3_win = R_user/0.0001
+                else:
+                    ues_ri_ti_0_3_win = R_user / ues_ri_ti_thr_3_win[action]
 
                 for i in array:
-                    if (ues_ri_ti_thr_3_win[i] != 1):
-                        ues_ri_ti_thr_3_win[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[i]
+                    ues_ri_ti_thr_3_win[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[i]
 
-                if (ues_ri_ti_thr_3_win[action] == 1):
-                    ues_ri_ti_thr_3_win[action] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[action] + (1 / time_window_short) * R_user
-                else:
-                    ues_ri_ti_thr_3_win[action] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[action] + (1 / time_window_short) * R_user
+                ues_ri_ti_thr_3_win[action] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[action] + (1 / time_window_short) * R_user
 
                 if max_ri_ti_short < ues_ri_ti_0_3_win:
                     max_ri_ti_action = action

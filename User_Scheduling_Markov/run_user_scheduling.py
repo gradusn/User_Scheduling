@@ -34,13 +34,13 @@ n_UEs = 2
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
+property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
 corr_probability = 0.8
 
-max_episodes = 30000000
+max_episodes = 20000000
 max_runs_stats = 500
 max_test = 100000
 Thr_convergence = []
@@ -54,7 +54,7 @@ def update():
     start_state = 'G G'
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels, 0)
-    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
 
     for episode in range(1, max_episodes):
 
@@ -80,16 +80,16 @@ def update():
 
         if done:
             timer_tti = 1
-            User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
+            User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
             if episode % 3000 == 0:
                 testing_convergence()
         if finish_5000 == 1:
             break
 
     # end of game
-    User_scheduling_env.q_table_rl.to_pickle("qtable_SU_example_10tti_quant2_convergence_rl.pkl")
-    User_scheduling_env.q_table_pf.to_pickle("qtable_SU_example_10tti_quant2_convergence_pf.pkl")
-    User_scheduling_env.q_table_rr.to_pickle("qtable_SU_example_10tti_quant2_convergence_rr.pkl")
+    User_scheduling_env.q_table_rl.to_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20703.pkl")
+    User_scheduling_env.q_table_pf.to_pickle("qtable_SU_example_5tti_convergence_pf_UE1GUE20703.pkl")
+    User_scheduling_env.q_table_rr.to_pickle("qtable_SU_example_5tti_convergence_rr_UE1GUE20703.pkl")
 
     RL.save_table()
     print('training over')
@@ -100,8 +100,8 @@ def testing_convergence():
         channels = iter
         #channels = channels[0]
         channels = channels.split("_")
-        User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
-        User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
+        User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
+        User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
         timer_tti = 1
         start_state = channels[0]
         channels_test = env.create_channel(start_state, timer_tti)
@@ -117,8 +117,8 @@ def testing_convergence():
             timer_tti += 1
             if done:
                 timer_tti = 1
-                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 1, dtype=float)
-                User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 1, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
                 env.add_channels_to_array(iter, 1)
 
     User_scheduling_env.channels_array = []
@@ -283,8 +283,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    plots()
+    update()
+    #plots()
     #test()
     #test_markov()
     #env.after(100, update)

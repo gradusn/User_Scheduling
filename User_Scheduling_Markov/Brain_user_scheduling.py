@@ -67,8 +67,8 @@ Add convergence table
 '''
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.1, reward_decay=0.1, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
-                 epsilon_decay=0.0000001):
+    def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+                 epsilon_decay=0.0000003):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
@@ -224,7 +224,7 @@ class QLearningTable:
 
     def choose_action_test(self, observation):
         if observation not in self.q_table.index:
-            #print("No state in table")
+            print("No state in table")
             #state_action = self.q_table.iloc[0, :]
             action = np.random.choice(2, 1)
             action = action[0]
@@ -261,10 +261,10 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self):
-        self.q_table.to_pickle("qtable_SU_example_10tti_quant2_rev5_convergence.pkl")
+        self.q_table.to_pickle("qtable_SU_example_5tti_convergence_UE1GUE20703.pkl")
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_rev5_convergence.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_5tti_convergence_UE1GUE20703.pkl")
 
     def check_state_exist(self, state, timer_tti):
         if state not in self.q_table.index:
