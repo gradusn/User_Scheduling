@@ -66,8 +66,8 @@ qtable_SU_example_10tti_quant2_rev4
 '''
 
 class QLearningTable:
-    def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.1,
-                 epsilon_decay=0.00000005):
+    def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
+                 epsilon_decay=0.0000003):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
@@ -262,12 +262,12 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self, table1, table2):
-        self.q_table.to_pickle("qtable_SU_example_5tti_50iter_UE1G0802_UE2B0802.pkl")
+        self.q_table.to_pickle("qtable_SU_example_5tti_25iter_UE1GUE20901.pkl")
         #np.save("table_ue1_5tti_UE1G_UE2B0901.npy", table1)
         #np.save("table_ue2_5tti_UE1G_UE2B0901.npy", table2)
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_5tti_50iter_UE1G0802_UE2B0802.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_5tti_25iter_UE1GUE20901.pkl")
         #tmp_table_ue1 = np.load("table_ue1_with_B_for1_test3.npy")
         #tmp_table_ue2 = np.load("table_ue2_with_B_for_test3.npy")
         '''

@@ -32,14 +32,14 @@ beta_GB = 0.9
 n_UEs = 3
 
 
-property_to_probability1 = {'G': [0.8, 0.2], 'B': [0.2, 0.8]}
-property_to_probability2 = {'G': [0.2, 0.8], 'B': [0.8, 0.2]}
+property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
 property_to_probability3 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 
 
 corr_probability = 0.8
 
-max_episodes = 50000000
+max_episodes = 25000000
 max_runs_stats = 500
 max_test = 100000
 table_UE1 = []
@@ -247,8 +247,8 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
