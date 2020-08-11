@@ -34,13 +34,13 @@ n_UEs = 2
 
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
+property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
 corr_probability = 0.8
 
-max_episodes = 20000000
+max_episodes = 25000000
 max_runs_stats = 500
 max_test = 100000
 Thr_convergence = []
@@ -124,21 +124,34 @@ def testing_convergence():
     User_scheduling_env.channels_array = []
 
 def plots():
-    table_rl = pd.read_pickle("qtable_SU_example_10tti_quant2_convergence_rl.pkl")
-    table_pf = pd.read_pickle("qtable_SU_example_10tti_quant2_convergence_pf.pkl")
-    table_rr = pd.read_pickle("qtable_SU_example_10tti_quant2_convergence_rr.pkl")
+    table_rl = pd.read_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20505.pkl")
+    table_rl_07 = pd.read_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20703.pkl")
+    table_pf = pd.read_pickle("qtable_SU_example_5tti_convergence_pf_UE1GUE20703.pkl")
+    table_rr = pd.read_pickle("qtable_SU_example_5tti_convergence_rr_UE1GUE20703.pkl")
 
 
-    Avg = []
+    convegrence_rl_07 = []
+    convegrence_rl_05 = []
+    convegrence_pf = []
+
     table_rl.drop(table_rl.columns[[0]], axis=1, inplace=True)
     for j in range(0, len(table_rl)):
         table_rl.iloc[j, :] = table_rl.iloc[j, :].replace(0, np.nan).ffill()
+        table_rl_07.iloc[j, :] = table_rl_07.iloc[j, :].replace(0, np.nan).ffill()
+        #print(table_rl.loc[table_rl.index[j], :][10000])
+        convegrence_rl_05.append(table_rl.loc[table_rl.index[j], :][10000])
+        convegrence_pf.append(table_pf.loc[table_rl.index[j], :][0])
+
+    for j in range(0, len(table_rl)):
+        convegrence_rl_07.append(table_rl_07.loc[table_rl.index[j], :][10000])
     '''
     for i in range(0, 10000):
         Avg.append(table_rl.iloc[:, i].mean())
     '''
+    np.savetxt("convegrence_pf.csv", convegrence_pf, delimiter=",")
+    #np.savetxt("convegrence_rl_05.csv", convegrence_rl_05, delimiter=",")
+    #np.savetxt("convegrence_rl_07.csv", convegrence_rl_07, delimiter=",")
 
-    np.savetxt("Avg_channels.csv", Avg, delimiter=",")
 
 def test():
     global state_action
@@ -283,8 +296,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #plots()
+    #update()
+    plots()
     #test()
     #test_markov()
     #env.after(100, update)
