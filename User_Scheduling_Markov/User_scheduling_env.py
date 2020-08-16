@@ -412,7 +412,7 @@ class UserScheduling(object):
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
 
         ues_thr_rl = observation[0].flatten()
-        thr_rl = R[0] / 8
+        thr_rl = R[action] / 8
         ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
 
         thr_rr = R[UE_for_RR]/8

@@ -33,14 +33,14 @@ beta_GB = 0.9
 n_UEs = 2
 
 
-property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
+property_to_probability1 = {'G': [0.7, 0.3], 'B': [0.3, 0.7]}
+property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
 property_to_probability3 = {'G': [0.1, 0.9], 'B': [0.1, 0.9]}
 
 
 corr_probability = 0.8
 
-max_episodes = 25000000
+max_episodes = 80000000
 max_runs_stats = 500
 max_test = 100000
 Thr_convergence = []
@@ -87,9 +87,9 @@ def update():
             break
 
     # end of game
-    User_scheduling_env.q_table_rl.to_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20703.pkl")
-    User_scheduling_env.q_table_pf.to_pickle("qtable_SU_example_5tti_convergence_pf_UE1GUE20703.pkl")
-    User_scheduling_env.q_table_rr.to_pickle("qtable_SU_example_5tti_convergence_rr_UE1GUE20703.pkl")
+    User_scheduling_env.q_table_rl.to_pickle("qtable_SU_example_5tti_convergence_rl_UE1G0703UE20307_fixed.pkl")
+    User_scheduling_env.q_table_pf.to_pickle("qtable_SU_example_5tti_convergence_pf_UE1G0703UE20307_fixed.pkl")
+    User_scheduling_env.q_table_rr.to_pickle("qtable_SU_example_5tti_convergence_rr_UUE1G0703UE20307_fixed.pkl")
 
     RL.save_table()
     print('training over')
@@ -124,10 +124,10 @@ def testing_convergence():
     User_scheduling_env.channels_array = []
 
 def plots():
-    table_rl = pd.read_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20505.pkl")
-    table_rl_07 = pd.read_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20703.pkl")
-    table_pf = pd.read_pickle("qtable_SU_example_5tti_convergence_pf_UE1GUE20703.pkl")
-    table_rr = pd.read_pickle("qtable_SU_example_5tti_convergence_rr_UE1GUE20703.pkl")
+    table_rl = pd.read_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20505_fixed.pkl")
+    table_rl_07 = pd.read_pickle("qtable_SU_example_5tti_convergence_rl_UE1GUE20703_fixed.pkl")
+    table_pf = pd.read_pickle("qtable_SU_example_5tti_convergence_pf_UE1GUE20703_fixed.pkl")
+    table_rr = pd.read_pickle("qtable_SU_example_5tti_convergence_rr_UE1GUE20703_fixed.pkl")
 
 
     convegrence_rl_07 = []
@@ -148,9 +148,9 @@ def plots():
     for i in range(0, 10000):
         Avg.append(table_rl.iloc[:, i].mean())
     '''
-    np.savetxt("convegrence_pf.csv", convegrence_pf, delimiter=",")
-    #np.savetxt("convegrence_rl_05.csv", convegrence_rl_05, delimiter=",")
-    #np.savetxt("convegrence_rl_07.csv", convegrence_rl_07, delimiter=",")
+    np.savetxt("convegrence_pf_fixedcsv", convegrence_pf, delimiter=",")
+    np.savetxt("convegrence_rl_05_fixed.csv", convegrence_rl_05, delimiter=",")
+    np.savetxt("convegrence_rl_07_fixed.csv", convegrence_rl_07, delimiter=",")
 
 
 def test():
@@ -296,8 +296,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    #update()
-    plots()
+    update()
+    #plots()
     #test()
     #test_markov()
     #env.after(100, update)
