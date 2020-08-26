@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 5
+max_time_slots = 6
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -61,8 +61,8 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-#n_actions = 3
 n_actions = 2
+#n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -84,10 +84,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 5
-time_window_short = 5
+time_window = 10
+time_window_short = 10
 time_window_large = 1000
-time_window_test = 5
+time_window_test = 10
 diff = []
 metric_rl = []
 metric_pf = []

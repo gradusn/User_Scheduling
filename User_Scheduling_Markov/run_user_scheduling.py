@@ -19,6 +19,7 @@ import copy
 import itertools
 import numpy as np
 import csv
+import time
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -33,15 +34,15 @@ beta_GB = 0.9
 n_UEs = 2
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
-property_to_probability3 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
+property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
+property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 
 corr_probability = 0.8
 
-max_episodes = 20000000
+max_episodes = 35000000
 max_runs_stats = 500
-max_test = 100000
+max_test = 300000
 table_UE1 = []
 table_UE2 = []
 table_UE3 = []
@@ -53,8 +54,9 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    #start_state = 'G G G'
+    #start_state = 'G G B'
     start_state = 'G G'
+    start_time = time.time()
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
     '''
@@ -104,6 +106,8 @@ def update():
 
     # end of game
     RL.save_table(table_UE1, table_UE2)
+    print("%s Seconds of train" % (time.time() - start_time))
+
     print('training over')
 
 def test():
@@ -111,6 +115,7 @@ def test():
     global start_state
 
     start_state = 'G G'
+    #start_state = 'G G B'
     timer_tti = 1
 
     channels = env.create_channel(start_state, timer_tti)
@@ -120,8 +125,8 @@ def test():
     User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
-        string_pf = "q_learning_SU_5tti_pf_1_noquant_0505_2.csv"
-        string_rl = "q_learning_SU_5tti_rl_1_noquant_0505_2.csv"
+        string_pf = "q_learning_SU_6tti_pf_1_noquant_UE1GUE2B0703.csv"
+        string_rl = "q_learning_SU_6tti_rl_1_noquant_UE1GUE2B0703.csv"
         #string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
 
         for episode in range(max_test):
@@ -145,13 +150,19 @@ def test():
 
         print('testing ' + str(iter) + ' over')
 
+        arr_rl = np.asarray(User_scheduling_env.metric_rl)[np.newaxis]
+        arr_rl = np.transpose(arr_rl)
+
+        arr_pf = np.asarray(User_scheduling_env.metric_pf_short)[np.newaxis]
+        arr_pf = np.transpose(arr_pf)
+
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.metric_rl)
+            thr_csv.writerows(arr_rl)
             thr.close()
         with open(string_pf, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(User_scheduling_env.metric_pf_short)
+            thr_csv.writerows(arr_pf)
             thr.close()
 
 
@@ -178,8 +189,8 @@ def Create_transtion_matrix(states):
     global property_to_probability3
 
 
-    #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
-    global_transition = [property_to_probability1, property_to_probability2]
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    #global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
     row_transition_matrix = []
