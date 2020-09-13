@@ -296,8 +296,8 @@ if __name__ == "__main__":
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
-    update()
-    #plots()
+    #update()
+    plots()
     #test()
     #test_markov()
     #env.after(100, update)
