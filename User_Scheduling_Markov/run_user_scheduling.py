@@ -56,6 +56,11 @@ def update():
     timer_tti = 1
     #start_state = 'G G B'
     start_state = 'G G'
+    '''
+    with open('iTBS_UE0_1.csv', newline='') as csvfile:
+        UE1_ITBS = csv.reader(csvfile)
+        UE1_ITBS = list(UE1_ITBS)
+    '''
     start_time = time.time()
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
@@ -255,8 +260,8 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
