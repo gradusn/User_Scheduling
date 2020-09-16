@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 6
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -84,10 +84,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 10
-time_window_short = 10
+time_window = 5
+time_window_short = 5
 time_window_large = 1000
-time_window_test = 10
+time_window_test = 5
 diff = []
 metric_rl = []
 metric_pf = []
@@ -143,14 +143,14 @@ class UserScheduling(object):
         # self.observations = np.ones((n_UEs,), dtype=int)
         # self._build_maze()
     def create_channel(self, channels_gain, timer_tti):
-        return str(channels_gain)+ " "+str(timer_tti)
-        #return str(channels_gain)
+        #return str(channels_gain)+ " "+str(timer_tti)
+        return str(channels_gain)
 
 
     def reset(self, channel_state):
         global Throughputs
         global array_thr_rl
-        array_thr_rl = np.full((1, n_UEs), 0, dtype=float).flatten()
+        array_thr_rl = np.full((1, n_UEs), 0, dtype=int).flatten()
         Throughputs = np.full((1, n_UEs), 1, dtype=float)
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
@@ -182,9 +182,9 @@ class UserScheduling(object):
 
         gain_array = state[1].split()
         for i in range(0, n_UEs):
-            scalar_gain_array.append(np.random.choice(gain[i][gain_array[i]]))
+            scalar_gain_array.append(gain_array[i])
 
-    def step(self, action, observation, state, timer_tti, channel_chain, episode):
+    def step(self, action, observation, state, timer_tti, UE1, UE2, episode):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -204,8 +204,12 @@ class UserScheduling(object):
         array.remove(action)
 
         #ues_thr_rl[action] += thr_rl
+        if action == 0:
+            next_channel_state = str(int(UE1[episode+1][0])) + " " + str(int(UE2[episode][0]))
+        else:
+            next_channel_state = str(int(UE1[episode][0])) + " " + str(int(UE2[episode+1][0]))
 
-        next_channel_state = channel_chain.next_state(state)
+
 
 
         for i in array:
@@ -401,7 +405,7 @@ class UserScheduling(object):
             UE_1 = action
             #MCS = self.getMcsFromCqi(scalar_gain_array[UE_1])
             #iTbs = McsToItbsDl[MCS]
-            rates.append(TransportBlockSizeTable[scalar_gain_array[UE_1]])
+            rates.append(TransportBlockSizeTable[int(scalar_gain_array[UE_1])])
             #rates.append(TransportBlockSizeTable_simple[scalar_gain_array[UE_1]-1])
             if option == 'test':
                 #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()

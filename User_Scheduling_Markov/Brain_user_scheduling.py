@@ -67,7 +67,7 @@ qtable_SU_example_10tti_quant2_rev4
 
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
-                 epsilon_decay=0.00000008):
+                 epsilon_decay=0.00000002):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate
@@ -265,30 +265,76 @@ class QLearningTable:
             -self.epsilon_decay * episode)
         print(self.epsilon)
 
-    def save_table(self, table1, table2):
-        self.q_table.to_pickle("qtable_SU_example_5tti_35iter_UE1G_UE2B0703_fixed.pkl")
-        #np.save("table_ue1_5tti_UE1G_UE2B0901.npy", table1)
-        #np.save("table_ue2_5tti_UE1G_UE2B0901.npy", table2)
+    def save_table(self, table1, table2, table3, table4, idxs):
+        self.q_table.to_pickle("test_implementation.pkl")
+        np.save("table_ue1_test.npy", table1)
+        np.save("table_ue2_test.npy", table2)
+        np.save("table_ue1_test_thr.npy", table3)
+        np.save("table_ue2_test_thr.npy", table4)
+        np.save("idx.npy", idxs)
+
 
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_5tti_35iter_UE1G_UE2B0703_fixed.pkl")
-        #tmp_table_ue1 = np.load("table_ue1_with_B_for1_test3.npy")
-        #tmp_table_ue2 = np.load("table_ue2_with_B_for_test3.npy")
-        '''
-        table_RL = np.zeros((len(tmp_table_ue1),len(tmp_table_ue2)))
-        for i in range(0, len(tmp_table_ue1)):
-            for j in range(0,len(tmp_table_ue2)):
-                find = str(tmp_table_ue1[i]) + " " +str(tmp_table_ue2[j]) + " "+ str('G B')
-                if find  in self.q_table.index:
-                    state_action = self.q_table.loc[find, :]
-                    table_RL[i][j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
-        #np.savetxt("table_RL_GB.csv", table_RL, delimiter=',')
-        #np.savetxt("tmp_table_ue1.csv", tmp_table_ue1, delimiter=',')
-        #np.savetxt("tmp_table_ue2.csv", tmp_table_ue2, delimiter=',')
+        self.q_table = pd.read_pickle("test_implementation.pkl")
+        tmp_table_ue1 = np.load("table_ue1_test.npy")
+        tmp_table_ue2 = np.load("table_ue2_test.npy")
+        tmp_table_thr_ue1 = np.load("table_ue1_test_thr.npy", allow_pickle=True)
+        tmp_table_thr_ue2 = np.load("table_ue2_test_thr.npy", allow_pickle=True)
+        idx = np.load("idx.npy", allow_pickle=True)
+        i = 0
+        j = 0
+
+
+        table_RL = np.full((len(tmp_table_ue1)*len(tmp_table_thr_ue1), 7), 0)
+        table_2d_UE1 = np.full((len(tmp_table_ue1), len(tmp_table_thr_ue1)), 0)
+        table_2d_UE2 = np.full((len(tmp_table_ue2), len(tmp_table_thr_ue2)), 0)
+
+
+        for x in range(0, len(idx)):
+            print(x)
+
+            channels_ue1 = str(tmp_table_ue1[idx[x][0]])
+            thr_ue1 = tmp_table_thr_ue1[idx[x][2]]
+
+            channels_ue2 = str(tmp_table_ue2[idx[x][1]])
+            thr_ue2 = tmp_table_thr_ue2[idx[x][3]]
+
+            channels = channels_ue1 + " " + channels_ue2
+            #tmp = tmp_table_thr_ue1[idx[i][0]][idx[i][3]]
+            thr = np.array([thr_ue1, thr_ue2], dtype=int)
+            find = str(np.array([thr, channels], dtype=object))
+
+            if find in self.q_table.index:
+                state_action = self.q_table.loc[find, :]
+                #table_RL[idx[i][0]][idx[i][1]][idx[i][2]][idx[i][3]] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
+                table_RL[i][j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
+                table_2d_UE1[idx[x][0]][idx[x][2]] = i
+                table_2d_UE2[idx[x][1]][idx[x][3]] = j
+                if (i == len(tmp_table_ue1)*len(tmp_table_thr_ue1) - 1):
+                    i = 0
+                    j = j + 1
+                else:
+                    i = i + 1
+
+
+
+        np.savetxt("channel_ue1.csv", tmp_table_ue1, delimiter=',' , fmt='%s')
+        np.savetxt("channel_ue2.csv", tmp_table_ue2, delimiter=',' , fmt='%s')
+        np.savetxt("thr_ue1.csv", tmp_table_thr_ue1, delimiter=',' , fmt='%s')
+        np.savetxt("thr_ue2.csv", tmp_table_thr_ue2, delimiter=',', fmt='%s')
+
+
+
+
+
+        np.savetxt("table_RL.csv", table_RL, delimiter=',')
+
+        np.savetxt("table_2d_UE1.csv", table_2d_UE1, delimiter=',')
+        np.savetxt("table_2d_UE2.csv", table_2d_UE2, delimiter=',')
 
         #print(table_RL)
-        '''
+
 
 
     def check_state_exist(self, state, timer_tti):

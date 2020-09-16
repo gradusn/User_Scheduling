@@ -40,11 +40,14 @@ property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 corr_probability = 0.8
 
-max_episodes = 35000000
+max_episodes = 100824
 max_runs_stats = 500
 max_test = 300000
 table_UE1 = []
 table_UE2 = []
+table_UE1_thr = []
+table_UE2_thr = []
+idx = [[]]
 table_UE3 = []
 
 
@@ -56,61 +59,114 @@ def update():
     timer_tti = 1
     #start_state = 'G G B'
     start_state = 'G G'
-    '''
-    with open('iTBS_UE0_1.csv', newline='') as csvfile:
+
+    with open('UE1_edit.csv', newline='') as csvfile:
         UE1_ITBS = csv.reader(csvfile)
         UE1_ITBS = list(UE1_ITBS)
-    '''
+
+    with open('UE2_edit.csv', newline='') as csvfile:
+        UE2_ITBS = csv.reader(csvfile)
+        UE2_ITBS = list(UE2_ITBS)
+
+    start_state = str(int(UE1_ITBS[0][0])) + " " + str(int(UE2_ITBS[0][0]))
     start_time = time.time()
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
+    split_channels = start_state.split()
+    if split_channels[0] not in table_UE1:
+        table_UE1.append(split_channels[0])
+    if split_channels[1] not in table_UE2:
+        table_UE2.append(split_channels[1])
     '''
-    if int(observation[0][0]) not in table_UE1:
-        table_UE1.append(int(observation[0][0]))
-    if int(observation[0][1]) not in table_UE2:
-        table_UE2.append(int(observation[0][1]))
-    if int(observation[0][2]) not in table_UE3:
-        table_UE3.append(int(observation[0][2]))
+    if observation[0][0] not in table_UE1_thr[table_UE1.index(split_channels[0])]:
+        table_UE1_thr[table_UE1.index(split_channels[0])].append(observation[0][0])
+    if observation[0][1] not in table_UE2_thr[table_UE2.index(split_channels[1])]:
+        table_UE2_thr[table_UE2.index(split_channels[1])].append(observation[0][1])
     '''
-    for episode in range(max_episodes):
-        print("train " + str(episode))
+    if observation[0][0] not in table_UE1_thr:
+        table_UE1_thr.append(observation[0][0])
+    if observation[0][1] not in table_UE2_thr:
+        table_UE2_thr.append(observation[0][1])
 
-        # RL choose action based on observation
-        #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1]))+" "+str(int(observation[0][2])) + " " + str(observation[1])
-        #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1])) + " " + str(observation[1])
+    idx1 = table_UE1.index(split_channels[0])
+    idx2 = table_UE2.index(split_channels[1])
+    idx3 = table_UE1_thr.index(observation[0][0])
+    idx4 = table_UE2_thr.index(observation[0][1])
 
-        action = RL.choose_action(str(observation), timer_tti)
+    idx= [[idx1, idx2, idx3, idx4]]
 
-        # RL take action and get next observation and reward
-        observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, channel_chain, episode)
+    for iter in range (0, 3):
 
-        # RL learn from this transition
-        '''
-        if int(observation_[0][0]) not in table_UE1:
-            table_UE1.append(int(observation_[0][0]))
-        if int(observation_[0][1]) not in table_UE2:
-            table_UE2.append(int(observation_[0][1]))
-        if int(observation_[0][2]) not in table_UE3:
-            table_UE3.append(int(observation_[0][2]))
-        '''
-        #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
+        for episode in range(max_episodes):
+            print("train " + str(episode))
 
-        #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1]))+" "+str(int(observation[0][2]))  + " " + str(observation_[1])
+            # RL choose action based on observation
+            #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1]))+" "+str(int(observation[0][2])) + " " + str(observation[1])
+            #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1])) + " " + str(observation[1])
 
-        RL.learn(observation, action, reward, str(observation_), timer_tti, episode, max_episodes)
+            action = RL.choose_action(str(observation), timer_tti)
 
-        # swap observation
+            # RL take action and get next observation and reward
+            observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, UE1_ITBS, UE2_ITBS, episode)
 
-        observation = observation_
+            # RL learn from this transition
+            split_channels = observation_[1].split()
+            if split_channels[0] not in table_UE1:
+                table_UE1.append(split_channels[0])
 
-        timer_tti += 1
+            if split_channels[1] not in table_UE2:
+                table_UE2.append(split_channels[1])
 
 
-        if done:
-            timer_tti = 1
+            '''
+            if observation_[0][0] not in table_UE1_thr[table_UE1.index(split_channels[0])]:
+                table_UE1_thr[table_UE1.index(split_channels[0])].append(observation_[0][0])
+    
+    
+            if observation_[0][1] not in table_UE2_thr[table_UE2.index(split_channels[1])]:
+                table_UE2_thr[table_UE2.index(split_channels[1])].append(observation_[0][1])
+            
+            '''
+            if observation_[0][0] not in table_UE1_thr:
+                table_UE1_thr.append(observation_[0][0])
+
+            if observation_[0][1] not in table_UE2_thr:
+                table_UE2_thr.append(observation_[0][1])
+
+            idx1 = table_UE1.index(split_channels[0])
+            idx2 = table_UE2.index(split_channels[1])
+            idx3 = table_UE1_thr.index(observation_[0][0])
+            idx4 = table_UE2_thr.index(observation_[0][1])
+
+            if [idx1, idx2, idx3, idx4] not in idx:
+                idx.append([idx1, idx2, idx3, idx4])
+
+            '''
+            if int(observation_[0][0]) not in table_UE1:
+                table_UE1.append(int(observation_[0][0]))
+            if int(observation_[0][1]) not in table_UE2:
+                table_UE2.append(int(observation_[0][1]))
+            if int(observation_[0][2]) not in table_UE3:
+                table_UE3.append(int(observation_[0][2]))
+            '''
+            #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
+
+            #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1]))+" "+str(int(observation[0][2]))  + " " + str(observation_[1])
+
+            RL.learn(observation, action, reward, str(observation_), timer_tti, episode, max_episodes)
+
+            # swap observation
+
+            observation = observation_
+
+            timer_tti += 1
+
+
+            if done:
+                timer_tti = 1
 
     # end of game
-    RL.save_table(table_UE1, table_UE2)
+    RL.save_table(table_UE1, table_UE2, table_UE1_thr, table_UE2_thr, idx)
     print("%s Seconds of train" % (time.time() - start_time))
 
     print('training over')
@@ -260,8 +316,8 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
