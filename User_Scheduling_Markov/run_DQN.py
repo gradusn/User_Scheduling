@@ -19,12 +19,13 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.1, 0.9], 'B': [0.9, 0.1]}
-property_to_probability3 = {'G': [0.2, 0.8], 'B': [0.8, 0.2]}
+property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
+property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 n_UEs = 3
+#n_UEs = 2
 
-max_episodes = 160000000
-max_test = 150000
+max_episodes = 1000000000
+max_test = 300000
 
 def update():
     step = 0
@@ -32,7 +33,8 @@ def update():
     global start_state
     start_time = time.time()
     timer_tti = 0
-    start_state = 'G G G'
+    start_state = 'G G B'
+    #start_state = 'G G'
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
 
@@ -71,7 +73,8 @@ def test():
     global start_state
 
     timer_tti = 0
-    start_state = 'G G G'
+    #start_state = 'G G G'
+    start_state = 'G G B'
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
     RL.load_model()
@@ -79,8 +82,8 @@ def test():
     enviroment_DQN.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
 
     for iter in range(0,1):
-        string_pf = "DQN_SU_simple_5ti_pf_q09_p01_lr001_rd06_for_no_avg.csv"
-        string_rl = "DQN_SU_simple_5tti_rl_q09_p01_lr001_rd06_for_no_avg.csv"
+        string_pf = "DQN_SU_10tti_2UEs_PF_UE1GUE2B0703UE3B.csv"
+        string_rl = "DQN_SU_10tti_2UEs_RL_UE1GUE2B0703UE3B.csv"
 
         for episode in range(max_test):
 
@@ -102,13 +105,19 @@ def test():
                 enviroment_DQN.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
 
         print('testing ' + str(iter) + ' over')
+
+        arr_rl = np.asarray(enviroment_DQN.metric_rl)[np.newaxis]
+        arr_rl = np.transpose(arr_rl)
+
+        arr_pf = np.asarray(enviroment_DQN.metric_pf)[np.newaxis]
+        arr_pf = np.transpose(arr_pf)
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(enviroment_DQN.metric_rl)
+            thr_csv.writerows(arr_rl)
             thr.close()
         with open(string_pf, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
-            thr_csv.writerow(enviroment_DQN.metric_pf)
+            thr_csv.writerows(arr_pf)
             thr.close()
 
 
@@ -184,7 +193,7 @@ if __name__ == "__main__":
 
     RL = DeepQNetwork(env.n_actions, env.n_features,
                       learning_rate=0.001,
-                      reward_decay=0.6,
+                      reward_decay=0.9,
                       e_greedy=0.9,
                       replace_target_iter=200,
                       memory_size=2000,
