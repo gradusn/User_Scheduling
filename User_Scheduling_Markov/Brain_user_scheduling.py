@@ -235,7 +235,7 @@ class QLearningTable:
     def learn(self, s, a, r, s_, timer_tti, episode, max_episodes):
         global count
         global count_2
-        '''
+        '''tTsS1988
         if timer_tti+1 == 3 and s_ not in self.q_table.index:
             count = count +1
         if timer_tti+1 == 2 and s_ not in self.q_table.index:
@@ -266,29 +266,29 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self, table1, table2, table3, table4, idxs):
-        self.q_table.to_pickle("test_implementation.pkl")
-        np.save("table_ue1_test.npy", table1)
-        np.save("table_ue2_test.npy", table2)
-        np.save("table_ue1_test_thr.npy", table3)
-        np.save("table_ue2_test_thr.npy", table4)
-        np.save("idx.npy", idxs)
+        self.q_table.to_pickle("test_implementation_1.pkl")
+        np.save("table_ue1_test_1.npy", table1)
+        np.save("table_ue2_test_1.npy", table2)
+        np.save("table_ue1_test_thr_1.npy", table3)
+        np.save("table_ue2_test_thr_1.npy", table4)
+        np.save("idx_1.npy", idxs)
 
 
 
     def load_table(self):
-        self.q_table = pd.read_pickle("test_implementation.pkl")
-        tmp_table_ue1 = np.load("table_ue1_test.npy")
-        tmp_table_ue2 = np.load("table_ue2_test.npy")
-        tmp_table_thr_ue1 = np.load("table_ue1_test_thr.npy", allow_pickle=True)
-        tmp_table_thr_ue2 = np.load("table_ue2_test_thr.npy", allow_pickle=True)
-        idx = np.load("idx.npy", allow_pickle=True)
+        self.q_table = pd.read_pickle("test_implementation_1.pkl")
+        tmp_table_ue1 = np.load("table_ue1_test_1.npy")
+        tmp_table_ue2 = np.load("table_ue2_test_1.npy")
+        tmp_table_thr_ue1 = np.load("table_ue1_test_thr_1.npy", allow_pickle=True)
+        tmp_table_thr_ue2 = np.load("table_ue2_test_thr_1.npy", allow_pickle=True)
+        idx = np.load("idx_1.npy", allow_pickle=True)
         i = 0
         j = 0
 
 
-        table_RL = np.full((len(tmp_table_ue1)*len(tmp_table_thr_ue1), 7), 0)
-        table_2d_UE1 = np.full((len(tmp_table_ue1), len(tmp_table_thr_ue1)), 0)
-        table_2d_UE2 = np.full((len(tmp_table_ue2), len(tmp_table_thr_ue2)), 0)
+        table_RL = np.full((100, 9), -1)
+        table_2d_UE1 = np.full((len(tmp_table_ue1), len(tmp_table_thr_ue1)), -1)
+        table_2d_UE2 = np.full((len(tmp_table_ue2), len(tmp_table_thr_ue2)), -1)
 
 
         for x in range(0, len(idx)):
@@ -308,30 +308,54 @@ class QLearningTable:
             if find in self.q_table.index:
                 state_action = self.q_table.loc[find, :]
                 #table_RL[idx[i][0]][idx[i][1]][idx[i][2]][idx[i][3]] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
-                table_RL[i][j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
-                table_2d_UE1[idx[x][0]][idx[x][2]] = i
-                table_2d_UE2[idx[x][1]][idx[x][3]] = j
-                if (i == len(tmp_table_ue1)*len(tmp_table_thr_ue1) - 1):
-                    i = 0
-                    j = j + 1
+                if (table_2d_UE1[idx[x][0]][idx[x][2]] != -1):
+                    tmp_i = table_2d_UE1[idx[x][0]][idx[x][2]];
+                    for j in range(0, 9):
+                        if ( table_RL[tmp_i][j] != -1 ):
+                            continue;
+                        table_RL[tmp_i][j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
+                        table_2d_UE2[idx[x][1]][idx[x][3]] = j
+                        break
                 else:
-                    i = i + 1
+                    if (table_2d_UE2[idx[x][1]][idx[x][3]] != -1):
+                        tmp_j = table_2d_UE2[idx[x][1]][idx[x][3]]
+                        for i in range(0, 100):
+                            if (table_RL[i][tmp_j] != -1):
+                                continue;
+                            table_RL[i][tmp_j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
+                            table_2d_UE1[idx[x][0]][idx[x][2]] = i
+                            break
+                        #i = i + 1
+                    else:
+                        for i in range(0, 100):
+                            for j in range(0,9):
+                                if (table_RL[i][j] == -1):
+                                    find = True
+                                    break
+                            if find:
+                                break
+                        table_RL[i][j] = int(np.random.choice(state_action[state_action == np.max(state_action)].index))
+                        table_2d_UE1[idx[x][0]][idx[x][2]] = i
+                        table_2d_UE2[idx[x][1]][idx[x][3]] = j
 
 
 
-        np.savetxt("channel_ue1.csv", tmp_table_ue1, delimiter=',' , fmt='%s')
-        np.savetxt("channel_ue2.csv", tmp_table_ue2, delimiter=',' , fmt='%s')
-        np.savetxt("thr_ue1.csv", tmp_table_thr_ue1, delimiter=',' , fmt='%s')
-        np.savetxt("thr_ue2.csv", tmp_table_thr_ue2, delimiter=',', fmt='%s')
+
+
+
+        np.savetxt("channel_ue1_1.csv", tmp_table_ue1, delimiter=',' , fmt='%s')
+        np.savetxt("channel_ue2_1.csv", tmp_table_ue2, delimiter=',' , fmt='%s')
+        np.savetxt("thr_ue1_1.csv", tmp_table_thr_ue1, delimiter=',' , fmt='%s')
+        np.savetxt("thr_ue2_1.csv", tmp_table_thr_ue2, delimiter=',', fmt='%s')
 
 
 
 
 
-        np.savetxt("table_RL.csv", table_RL, delimiter=',')
+        np.savetxt("table_RL_1.csv", table_RL, delimiter=',')
 
-        np.savetxt("table_2d_UE1.csv", table_2d_UE1, delimiter=',')
-        np.savetxt("table_2d_UE2.csv", table_2d_UE2, delimiter=',')
+        np.savetxt("table_2d_UE1_1.csv", table_2d_UE1, delimiter=',')
+        np.savetxt("table_2d_UE2_1.csv", table_2d_UE2, delimiter=',')
 
         #print(table_RL)
 

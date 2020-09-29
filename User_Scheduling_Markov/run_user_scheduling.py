@@ -40,7 +40,7 @@ property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 corr_probability = 0.8
 
-max_episodes = 100824
+max_episodes = 200
 max_runs_stats = 500
 max_test = 300000
 table_UE1 = []
@@ -57,6 +57,7 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
+    count = 0
     #start_state = 'G G B'
     start_state = 'G G'
 
@@ -95,19 +96,18 @@ def update():
 
     idx= [[idx1, idx2, idx3, idx4]]
 
-    for iter in range (0, 3):
 
-        for episode in range(max_episodes):
-            print("train " + str(episode))
+    for episode in range(max_episodes):
+        channel_UE1 = 0
+        channel_UE2 = 0
+        while channel_UE2 < len(UE2_ITBS)-2 and channel_UE1 < len(UE1_ITBS):
+            print("train " + str(count) +" "+ str(episode))
 
-            # RL choose action based on observation
-            #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1]))+" "+str(int(observation[0][2])) + " " + str(observation[1])
-            #states_to_table = str(int(observation[0][0]))+ " "+str(int(observation[0][1])) + " " + str(observation[1])
 
             action = RL.choose_action(str(observation), timer_tti)
 
             # RL take action and get next observation and reward
-            observation_, reward, start_state, done = env.step(action, observation, start_state, timer_tti, UE1_ITBS, UE2_ITBS, episode)
+            observation_, reward, start_state, done, channel_UE1, channel_UE2 = env.step(action, observation, start_state, timer_tti, UE1_ITBS, UE2_ITBS, episode, channel_UE1, channel_UE2)
 
             # RL learn from this transition
             split_channels = observation_[1].split()
@@ -118,15 +118,15 @@ def update():
                 table_UE2.append(split_channels[1])
 
 
-            '''
-            if observation_[0][0] not in table_UE1_thr[table_UE1.index(split_channels[0])]:
-                table_UE1_thr[table_UE1.index(split_channels[0])].append(observation_[0][0])
-    
-    
-            if observation_[0][1] not in table_UE2_thr[table_UE2.index(split_channels[1])]:
-                table_UE2_thr[table_UE2.index(split_channels[1])].append(observation_[0][1])
-            
-            '''
+                '''
+                if observation_[0][0] not in table_UE1_thr[table_UE1.index(split_channels[0])]:
+                    table_UE1_thr[table_UE1.index(split_channels[0])].append(observation_[0][0])
+        
+        
+                if observation_[0][1] not in table_UE2_thr[table_UE2.index(split_channels[1])]:
+                    table_UE2_thr[table_UE2.index(split_channels[1])].append(observation_[0][1])
+                
+                '''
             if observation_[0][0] not in table_UE1_thr:
                 table_UE1_thr.append(observation_[0][0])
 
@@ -141,26 +141,26 @@ def update():
             if [idx1, idx2, idx3, idx4] not in idx:
                 idx.append([idx1, idx2, idx3, idx4])
 
-            '''
-            if int(observation_[0][0]) not in table_UE1:
-                table_UE1.append(int(observation_[0][0]))
-            if int(observation_[0][1]) not in table_UE2:
-                table_UE2.append(int(observation_[0][1]))
-            if int(observation_[0][2]) not in table_UE3:
-                table_UE3.append(int(observation_[0][2]))
-            '''
-            #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
+                '''
+                if int(observation_[0][0]) not in table_UE1:
+                    table_UE1.append(int(observation_[0][0]))
+                if int(observation_[0][1]) not in table_UE2:
+                    table_UE2.append(int(observation_[0][1]))
+                if int(observation_[0][2]) not in table_UE3:
+                    table_UE3.append(int(observation_[0][2]))
+                '''
+                #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1])) + " " + str(observation_[1])
 
-            #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1]))+" "+str(int(observation[0][2]))  + " " + str(observation_[1])
+                #states_to_table_2 = str(int(observation_[0][0])) + " "+str(int(observation_[0][1]))+" "+str(int(observation[0][2]))  + " " + str(observation_[1])
 
-            RL.learn(observation, action, reward, str(observation_), timer_tti, episode, max_episodes)
+            RL.learn(observation, action, reward, str(observation_), timer_tti, count, max_episodes)
 
-            # swap observation
+                # swap observation
 
             observation = observation_
 
             timer_tti += 1
-
+            count += 1
 
             if done:
                 timer_tti = 1

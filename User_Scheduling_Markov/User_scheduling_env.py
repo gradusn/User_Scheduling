@@ -184,7 +184,7 @@ class UserScheduling(object):
         for i in range(0, n_UEs):
             scalar_gain_array.append(gain_array[i])
 
-    def step(self, action, observation, state, timer_tti, UE1, UE2, episode):
+    def step(self, action, observation, state, timer_tti, UE1, UE2, episode, channel_UE1, channel_UE2):
         global ues_thr_random_global
         global scalar_gain_array
         global ues_thr_optimal_global
@@ -205,10 +205,11 @@ class UserScheduling(object):
 
         #ues_thr_rl[action] += thr_rl
         if action == 0:
-            next_channel_state = str(int(UE1[episode+1][0])) + " " + str(int(UE2[episode][0]))
+            channel_UE1 += 1
+            next_channel_state = str(int(UE1[channel_UE1][0])) + " " + str(int(UE2[channel_UE2][0]))
         else:
-            next_channel_state = str(int(UE1[episode][0])) + " " + str(int(UE2[episode+1][0]))
-
+            channel_UE2 += 1
+            next_channel_state = str(int(UE1[channel_UE1][0])) + " " + str(int(UE2[channel_UE2+1][0]))
 
 
 
@@ -239,7 +240,7 @@ class UserScheduling(object):
             s_ = np.array([ues_thr_rl, channels], dtype=object)
 
 
-        return s_, reward, next_channel_state, done
+        return s_, reward, next_channel_state, done, channel_UE1, channel_UE2
 
     def step_test(self, action, observation, state, timer_tti, channel_chain, episode):
         global ues_thr_random_global
