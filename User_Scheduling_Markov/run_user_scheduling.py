@@ -30,8 +30,8 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-#n_UEs = 3
-n_UEs = 2
+n_UEs = 3
+#n_UEs = 2
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
@@ -42,7 +42,7 @@ corr_probability = 0.8
 
 max_episodes = 35000000
 max_runs_stats = 500
-max_test = 300000
+max_test = 100000
 table_UE1 = []
 table_UE2 = []
 table_UE3 = []
@@ -54,8 +54,8 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    #start_state = 'G G B'
-    start_state = 'G G'
+    start_state = 'G G B'
+    #start_state = 'G G'
     '''
     with open('iTBS_UE0_1.csv', newline='') as csvfile:
         UE1_ITBS = csv.reader(csvfile)
@@ -119,8 +119,8 @@ def test():
     global state_action
     global start_state
 
-    start_state = 'G G'
-    #start_state = 'G G B'
+    #start_state = 'G G'
+    start_state = 'G G B'
     timer_tti = 1
 
     channels = env.create_channel(start_state, timer_tti)
@@ -132,7 +132,7 @@ def test():
     for iter in range(0, 1):
         string_pf = "q_learning_SU_6tti_pf_1_noquant_UE1GUE2B0703.csv"
         string_rl = "q_learning_SU_6tti_rl_1_noquant_UE1GUE2B0703.csv"
-        #string_pf_short = "q_learning_SU_10tti_pf_gb_quant2_0_5.csv"
+        string_rr = "q_learning_5_tti_rr_3Ues.csv"
 
         for episode in range(max_test):
             print("test " + str(episode))
@@ -160,6 +160,14 @@ def test():
 
         arr_pf = np.asarray(User_scheduling_env.metric_pf_short)[np.newaxis]
         arr_pf = np.transpose(arr_pf)
+
+        arr_rr = np.asarray(User_scheduling_env.metric_rr)[np.newaxis]
+        arr_rr = np.transpose(arr_rr)
+
+        with open(string_rr, "a") as thr:
+            thr_csv = csv.writer(thr, dialect='excel')
+            thr_csv.writerows(arr_rr)
+            thr.close()
 
         with open(string_rl, "a") as thr:
             thr_csv = csv.writer(thr, dialect='excel')
@@ -252,16 +260,16 @@ if __name__ == "__main__":
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
+    transition_matrix_channel = Create_transtion_matrix(states)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states_2_ues)
+                                states=states)
 
 
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
