@@ -26,7 +26,7 @@ modevalue1 = 0
 modevalue2 = 0
 
 channelmatrix = [[]]
-n_UEs = 3
+n_UEs = 2
 #comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 scalar_gain_array = []
@@ -34,8 +34,8 @@ scalar_gain_array = []
 cqi = []
 
 #n_actions = binomial(n_UEs, 2)
-n_actions = 3
-#n_actions = 2
+#n_actions = 3
+n_actions = 2
 
 corr_array = []
 
@@ -58,8 +58,8 @@ SpectralEfficiencyForMcs = [0.15, 0.19, 0.23, 0.31, 0.38, 0.49, 0.6, 0.74, 0.88,
 gain0 = {'G': [26, 26], 'B': [1, 1]}
 gain1 = {'G': [26, 26], 'B': [1, 1]}
 gain2 = {'G': [26, 26], 'B': [1, 1]}
-gain = [gain0, gain1, gain2]
-#gain = [gain0, gain1]
+#gain = [gain0, gain1, gain2]
+gain = [gain0, gain1]
 
 McsToItbsDl = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
   19, 20, 21, 22, 23, 24, 25, 26]

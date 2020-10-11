@@ -18,14 +18,14 @@ state_action = []
 
 alpha_GB = 0.9
 beta_GB = 0.9
-property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability1 = {'G': [0.7, 0.3], 'B': [0.3, 0.7]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
 property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
-n_UEs = 3
-#n_UEs = 2
+#n_UEs = 3
+n_UEs = 2
 
-max_episodes = 1000000000
-max_test = 300000
+max_episodes = 450000000
+max_test = 100000
 
 def update():
     step = 0
@@ -33,8 +33,8 @@ def update():
     global start_state
     start_time = time.time()
     timer_tti = 0
-    start_state = 'G G B'
-    #start_state = 'G G'
+    #start_state = 'G G B'
+    start_state = 'G G'
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
 
@@ -74,7 +74,7 @@ def test():
 
     timer_tti = 0
     #start_state = 'G G G'
-    start_state = 'G G B'
+    start_state = 'G G'
     start_state_snr = env.create_channel(start_state)
     observation = env.reset(start_state_snr)
     RL.load_model()
@@ -185,9 +185,9 @@ if __name__ == "__main__":
                     'B B G',
                     'B B B']
 
-    transition_matrix_channel = Create_transtion_matrix(states_3_ues)
+    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states_3_ues)
+                                states=states_2_ues)
 
     env = UserScheduling()
 
@@ -200,8 +200,8 @@ if __name__ == "__main__":
                       # output_graph=True
                       )
 
-    update()
-    #test()
+    #update()
+    test()
     #with open("Log_Thr_2_tti_test_0.9_epsilon_decay_60000000_NN_SU.csv", "a") as thr:
         #thr_csv = csv.writer(thr, dialect='excel')
         #thr_csv.writerow(enviroment_DQN.diff)
