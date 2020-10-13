@@ -67,7 +67,7 @@ qtable_SU_example_10tti_quant2_rev4
 
 class QLearningTable:
     def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.2, max_epsilon=1.0, min_epsilon=0.01,
-                 epsilon_decay=0.00000002):
+                 epsilon_decay=0.000000007):
         #self.file = open("test_6.txt", "w")
         self.actions = actions  # a list
         self.lr = learning_rate

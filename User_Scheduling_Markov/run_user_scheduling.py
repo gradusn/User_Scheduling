@@ -40,7 +40,7 @@ property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 corr_probability = 0.8
 
-max_episodes = 200
+max_episodes = 500
 max_runs_stats = 500
 max_test = 300000
 table_UE1 = []
@@ -100,7 +100,8 @@ def update():
     for episode in range(max_episodes):
         channel_UE1 = 0
         channel_UE2 = 0
-        while channel_UE2 < len(UE2_ITBS)-2 and channel_UE1 < len(UE1_ITBS):
+        while channel_UE2 < len(UE2_ITBS)-2 and channel_UE1 < len(UE1_ITBS)-1:
+            #print(len(UE1_ITBS))
             print("train " + str(count) +" "+ str(episode))
 
 
@@ -316,8 +317,8 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    #update()
-    test()
+    update()
+    #test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()
