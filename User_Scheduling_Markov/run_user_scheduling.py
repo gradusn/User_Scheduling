@@ -30,8 +30,8 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-n_UEs = 3
-#n_UEs = 2
+#n_UEs = 3
+n_UEs = 2
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
@@ -119,8 +119,8 @@ def test():
     global state_action
     global start_state
 
-    #start_state = 'G G'
-    start_state = 'G G B'
+    start_state = 'G G'
+    #start_state = 'G G B'
     timer_tti = 1
 
     channels = env.create_channel(start_state, timer_tti)
@@ -128,6 +128,7 @@ def test():
     User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
+    User_scheduling_env.ues_thr_ri_ti_global_short_accum_thr = np.full((1, n_UEs), 0, dtype=float)
     RL.load_table()
     for iter in range(0, 1):
         string_pf = "q_learning_SU_6tti_pf_1_noquant_UE1GUE2B0703.csv"
@@ -202,8 +203,8 @@ def Create_transtion_matrix(states):
     global property_to_probability3
 
 
-    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
-    #global_transition = [property_to_probability1, property_to_probability2]
+    #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
     row_transition_matrix = []
@@ -260,9 +261,9 @@ if __name__ == "__main__":
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(states)
+    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states)
+                                states=states_2_ues)
 
 
     env = UserScheduling()

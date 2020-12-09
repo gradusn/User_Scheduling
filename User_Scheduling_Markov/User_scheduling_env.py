@@ -23,12 +23,12 @@ from MarkovChain import MarkovChain
 from itertools import combinations
 
 
-max_time_slots = 5
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 3
-#n_UEs = 2
+#n_UEs = 3
+n_UEs = 2
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -50,8 +50,8 @@ gain2 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-gain = [gain0, gain1, gain2]
-#gain = [gain0, gain1]
+#gain = [gain0, gain1, gain2]
+gain = [gain0, gain1]
 
 count_GG_rl = 0
 count_GG_pf = 0
@@ -61,8 +61,8 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-n_actions = 3
-#n_actions = 2
+#n_actions = 3
+n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -71,6 +71,8 @@ logthr_optimal = []
 
 ues_thr_random_global = []
 ues_thr_ri_ti_global_short = []
+ues_thr_ri_ti_global_short_accum_thr = []
+
 ues_thr_ri_ti_global = []
 ues_thr_ri_ti_global_rr = []
 UE_for_RR = 0
@@ -84,10 +86,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 5
-time_window_short = 5
+time_window = 10
+time_window_short = 10
 time_window_large = 1000
-time_window_test = 5
+time_window_test = 10
 diff = []
 metric_rl = []
 metric_pf = []
@@ -258,10 +260,10 @@ class UserScheduling(object):
         global string_states
         global tmp_string
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.get_rates(observation, action, 'test', timer_tti)
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg, action_pf_weight = self.get_rates(observation, action, 'test', timer_tti)
         #tmp_string = tmp_string + str(observation[1]) + " "
 
-        print(str(observation) + str(action) + str(action_pf))
+        print(str(observation) + str(action) + str(action_pf) + str(action_pf_weight))
         string_states = string_states + state + " "
         ues_thr_rl = observation[0].flatten()
 
@@ -294,6 +296,7 @@ class UserScheduling(object):
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
         ues_thr_ri_ti_global_noavg = pf_thr_noavg
         ues_thr_ri_ti_global_rr = ues_ri_ti_thr_rr
+        ues_thr_ri_ti_global_short_accum_thr = tmp_thr_optimal
 
         UE_for_RR = UE_for_RR + 1
         UE_for_RR = UE_for_RR % n_UEs
@@ -376,8 +379,8 @@ class UserScheduling(object):
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.find_optimal_action(observation, actions, option, timer_tti)
             return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
         else:
-            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.find_optimal_action(observation, actions, option, timer_tti)
-            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg
+            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg, action_pf_weight = self.find_optimal_action(observation, actions, option, timer_tti)
+            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg, action_pf_weight
 
     def find_optimal_action(self, observation, actions_array, option, timer_tti):
         max_sum_log = 0
@@ -389,7 +392,9 @@ class UserScheduling(object):
         global ues_thr_ri_ti_global
         global ues_thr_ri_ti_global_rr
         global ues_thr_ri_ti_global_noavg
+        global ues_thr_ri_ti_global_short_accum_thr
 
+        tmp_max_ri_ti_thr_short_accum_thr = []
         tmp_max_ri_ti_thr_short = []
         tmp_max_ri_ti_thr = []
         tmp_max_ri_ti_thr_noavg = []
@@ -407,16 +412,24 @@ class UserScheduling(object):
                 #ues_ri_ti_thr = copy.deepcopy(ues_thr_ri_ti_global).flatten()
                 ues_ri_ti_thr_3_win = copy.deepcopy(ues_thr_ri_ti_global_short).flatten()
                 ues_ri_ti_thr_noavg = copy.deepcopy(ues_thr_ri_ti_global_noavg).flatten()
+                tmp_max_ri_ti_thr_short_accum = copy.deepcopy(ues_thr_ri_ti_global_short_accum_thr).flatten()
 
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
                 R_user = rates[action]/8
+                if ues_ri_ti_thr_noavg[action] == 0:
+                    ues_ri_ti_thr_noavg_metric = R_user/0.0001
+                else:
+                    ues_ri_ti_thr_noavg_metric = R_user / ues_ri_ti_thr_noavg[action]
+
                 ues_ri_ti_thr_noavg[action] += R_user
                 #ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
                 if ues_ri_ti_thr_3_win[action] == 0:
                     ues_ri_ti_0_3_win = R_user/0.0001
                 else:
                     ues_ri_ti_0_3_win = R_user / ues_ri_ti_thr_3_win[action]
+
+                tmp_max_ri_ti_thr_short_accum[action] += R_user
 
                 for i in array:
                     ues_ri_ti_thr_3_win[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_3_win[i]
@@ -427,11 +440,17 @@ class UserScheduling(object):
                     max_ri_ti_action = action
                     max_ri_ti_short = ues_ri_ti_0_3_win
                     tmp_max_ri_ti_thr_short = copy.deepcopy(ues_ri_ti_thr_3_win)
+                    tmp_max_ri_ti_thr_short_accum_thr = copy.deepcopy(tmp_max_ri_ti_thr_short_accum)
+
+                if max_ri_ti < ues_ri_ti_thr_noavg_metric:
+                    max_ri_ti_action_noavg = action
+                    max_ri_ti = ues_ri_ti_thr_noavg_metric
+                    #tmp_max_ri_ti_thr_short = copy.deepcopy(ues_ri_ti_thr_3_win)
                     tmp_max_ri_ti_thr_noavg = copy.deepcopy(ues_ri_ti_thr_noavg)
 
 
 
-        return  rates, tmp_max_ri_ti_thr, tmp_max_ri_ti_thr_short, max_ri_ti_action, tmp_max_ri_ti_thr_noavg
+        return  rates, tmp_max_ri_ti_thr_short_accum_thr, tmp_max_ri_ti_thr_short, max_ri_ti_action, tmp_max_ri_ti_thr_noavg, max_ri_ti_action_noavg
 
     def getMcsFromCqi(self, ue_cqi):
         spectralEfficiency = SpectralEfficiencyForCqi[ue_cqi]
