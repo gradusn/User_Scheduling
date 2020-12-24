@@ -20,15 +20,15 @@ import csv
 from scipy.stats.stats import pearsonr
 from MarkovChain import MarkovChain
 
-from itertools import combinations
+from itertools import combinations, product
 
 
-max_time_slots = 10
+max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-#n_UEs = 3
-n_UEs = 2
+n_UEs = 3
+#n_UEs = 2
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -50,8 +50,8 @@ gain2 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-#gain = [gain0, gain1, gain2]
-gain = [gain0, gain1]
+gain = [gain0, gain1, gain2]
+#gain = [gain0, gain1]
 
 count_GG_rl = 0
 count_GG_pf = 0
@@ -61,8 +61,8 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-#n_actions = 3
-n_actions = 2
+n_actions = 3
+#n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -86,13 +86,15 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 10
-time_window_short = 10
-time_window_large = 1000
-time_window_test = 10
+time_window = 5
+time_window_short = 5
+time_window_large = 5
+time_window_test = 5
 diff = []
 metric_rl = []
 metric_pf = []
+metric_pf_short_accum_thr = []
+metric_rl_accum_thr = []
 metric_pf_short = []
 metric_rr = []
 
@@ -126,6 +128,9 @@ Throughputs = []
 array_thr_rl = []
 array_thr_pf = []
 count  = 0
+string_states_list = []
+rl_actions = ""
+pf_actions = ""
 
 
 q_table = pd.DataFrame(columns=list(range(2)), dtype=np.float64)
@@ -153,7 +158,7 @@ class UserScheduling(object):
         global Throughputs
         global array_thr_rl
         array_thr_rl = np.full((1, n_UEs), 0, dtype=float).flatten()
-        Throughputs = np.full((1, n_UEs), 1, dtype=float)
+        Throughputs = np.full((1, n_UEs), 0, dtype=float).flatten()
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
         gb_channels = channel_state.split()
@@ -250,6 +255,8 @@ class UserScheduling(object):
         global Throughputs
         global metric_pf_short
         global metric_rl
+        global metric_pf_short_accum_thr
+        global metric_rl_accum_thr
         global count_GG_rl
         global count_GG_pf
         global string_channels
@@ -259,11 +266,18 @@ class UserScheduling(object):
         global ues_thr_ri_ti_global_noavg
         global string_states
         global tmp_string
+        global ues_thr_ri_ti_global_short_accum_thr
+        global string_states_list
+        global rl_actions
+        global pf_actions
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg, action_pf_weight = self.get_rates(observation, action, 'test', timer_tti)
+
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         #tmp_string = tmp_string + str(observation[1]) + " "
+        rl_actions = rl_actions + str(action)
+        pf_actions = pf_actions + str(action_pf)
 
-        print(str(observation) + str(action) + str(action_pf) + str(action_pf_weight))
+        print(str(observation) + str(action) + str(action_pf) )
         string_states = string_states + state + " "
         ues_thr_rl = observation[0].flatten()
 
@@ -285,6 +299,7 @@ class UserScheduling(object):
 
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
 
+        Throughputs[action] += thr_rl
 
         for i in array_rr:
             ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
@@ -294,7 +309,7 @@ class UserScheduling(object):
 
 
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
-        ues_thr_ri_ti_global_noavg = pf_thr_noavg
+        #ues_thr_ri_ti_global_noavg = pf_thr_noavg
         ues_thr_ri_ti_global_rr = ues_ri_ti_thr_rr
         ues_thr_ri_ti_global_short_accum_thr = tmp_thr_optimal
 
@@ -306,6 +321,53 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state, timer_tti+1)
 
         if timer_tti == max_time_slots:
+            #actions = list(combinations([0,1,2],5))
+            actions = list(product([0, 1, 2], repeat=5))
+            optimal_thr = 0
+            tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
+            if [string_states] not in string_states_list:
+                string_states_list.append([string_states])
+                string_states_split = string_states.split()
+                for i in actions:
+                    tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
+                    j = 0
+                    while j < 15:
+                        string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2]]
+                        if string_state_split_tmp[i[int(j/3)]] == 'G':
+                            tmp_thr_for_optimum[i[int(j/3)]] += TransportBlockSizeTable[26]/8
+                        else:
+                            tmp_thr_for_optimum[i[int(j/3)]] += TransportBlockSizeTable[1]/8
+                        j = j + 3
+                    thr = 0
+                    for t in range(0, len(tmp_thr_for_optimum)):
+                        if tmp_thr_for_optimum[t] == 0:
+                            thr = thr + 0
+                        else:
+                            thr = thr + np.log2(tmp_thr_for_optimum[t])
+
+                    if optimal_thr < thr:
+                        optimal_actions = i
+                        optimal_thr = thr
+                reward = 0
+                for t in range(0, len(Throughputs)):
+                    if Throughputs[t] == 0:
+                        reward = reward + 0
+                    else:
+                        reward = reward + float(np.log2(Throughputs[t]))
+                reward_optimal_short = 0
+                for k in range(0, len(ues_thr_ri_ti_global_short_accum_thr)):
+                    if ues_thr_ri_ti_global_short_accum_thr[k] == 0:
+                        reward_optimal_short = reward_optimal_short + 0
+                    else:
+                        reward_optimal_short = reward_optimal_short + float(np.log2(ues_thr_ri_ti_global_short_accum_thr[k]))
+                #to_write = string_states + "  " + str(optimal_actions) + "  " + str(optimal_thr) + "  " + (rl_actions) + "  " + str(reward) + "  " + str(pf_actions) + "  " + str(reward_optimal_short) + "\n"
+                #f = open("results_3UEs_5TTi.txt", "a")
+                #f.write(to_write)
+                #f.close()
+
+
+            rl_actions = ""
+            pf_actions = ""
             if string_states == "G B G B G B G B G G ":
                 stop = 1
             channels = self.create_channel(next_channel_state, 1)
@@ -321,12 +383,31 @@ class UserScheduling(object):
 
             reward_optimal_short = 0
             for i in range(0, len(tmp_thr_optimal_short)):
-                if pf_thr_noavg[i] == 0:
+                if tmp_thr_optimal_short[i] == 0:
                     reward_optimal_short = reward_optimal_short + 0
                 else:
                     reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
 
             metric_pf_short.append(reward_optimal_short)
+
+            reward = 0
+            for t in range(0, len(Throughputs)):
+                if Throughputs[t] == 0:
+                    reward = reward + 0
+                else:
+                    reward = reward + float(np.log2(Throughputs[t]))
+            metric_rl_accum_thr.append(reward)
+
+            reward_optimal_short = 0
+            for k in range(0, len(ues_thr_ri_ti_global_short_accum_thr)):
+                if ues_thr_ri_ti_global_short_accum_thr[k] == 0:
+                    reward_optimal_short = reward_optimal_short + 0
+                else:
+                    reward_optimal_short = reward_optimal_short + float(
+                        np.log2(ues_thr_ri_ti_global_short_accum_thr[k]))
+            metric_pf_short_accum_thr.append(reward_optimal_short)
+
+
 
             if ((float(reward) - float(reward_optimal_short))/float(reward_optimal_short)*100 >= 5):
                 self.check_state(string_states, reward, reward_optimal_short)
@@ -379,8 +460,8 @@ class UserScheduling(object):
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.find_optimal_action(observation, actions, option, timer_tti)
             return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
         else:
-            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg, action_pf_weight = self.find_optimal_action(observation, actions, option, timer_tti)
-            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg, action_pf_weight
+            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
+            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf
 
     def find_optimal_action(self, observation, actions_array, option, timer_tti):
         max_sum_log = 0
@@ -417,13 +498,7 @@ class UserScheduling(object):
                 array = list(copy.deepcopy(actions_array))
                 array.remove(action)
                 R_user = rates[action]/8
-                if ues_ri_ti_thr_noavg[action] == 0:
-                    ues_ri_ti_thr_noavg_metric = R_user/0.0001
-                else:
-                    ues_ri_ti_thr_noavg_metric = R_user / ues_ri_ti_thr_noavg[action]
 
-                ues_ri_ti_thr_noavg[action] += R_user
-                #ues_ri_ti_0 = R_user / ues_ri_ti_thr[action]
                 if ues_ri_ti_thr_3_win[action] == 0:
                     ues_ri_ti_0_3_win = R_user/0.0001
                 else:
@@ -442,15 +517,8 @@ class UserScheduling(object):
                     tmp_max_ri_ti_thr_short = copy.deepcopy(ues_ri_ti_thr_3_win)
                     tmp_max_ri_ti_thr_short_accum_thr = copy.deepcopy(tmp_max_ri_ti_thr_short_accum)
 
-                if max_ri_ti < ues_ri_ti_thr_noavg_metric:
-                    max_ri_ti_action_noavg = action
-                    max_ri_ti = ues_ri_ti_thr_noavg_metric
-                    #tmp_max_ri_ti_thr_short = copy.deepcopy(ues_ri_ti_thr_3_win)
-                    tmp_max_ri_ti_thr_noavg = copy.deepcopy(ues_ri_ti_thr_noavg)
 
-
-
-        return  rates, tmp_max_ri_ti_thr_short_accum_thr, tmp_max_ri_ti_thr_short, max_ri_ti_action, tmp_max_ri_ti_thr_noavg, max_ri_ti_action_noavg
+        return  rates, tmp_max_ri_ti_thr_short_accum_thr, tmp_max_ri_ti_thr_short, max_ri_ti_action
 
     def getMcsFromCqi(self, ue_cqi):
         spectralEfficiency = SpectralEfficiencyForCqi[ue_cqi]

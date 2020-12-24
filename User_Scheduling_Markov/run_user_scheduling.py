@@ -30,8 +30,8 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-#n_UEs = 3
-n_UEs = 2
+n_UEs = 3
+#n_UEs = 2
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
@@ -119,8 +119,8 @@ def test():
     global state_action
     global start_state
 
-    start_state = 'G G'
-    #start_state = 'G G B'
+    #start_state = 'G G'
+    start_state = 'G G B'
     timer_tti = 1
 
     channels = env.create_channel(start_state, timer_tti)
@@ -153,8 +153,17 @@ def test():
                 User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
                 User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
                 User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_short_accum_thr = np.full((1, n_UEs), 0, dtype=float)
 
         print('testing ' + str(iter) + ' over')
+
+        f = open("results_3UEs_5TTi.txt", "a")
+        avg_rl = np.array(User_scheduling_env.metric_rl_accum_thr).mean()
+        avg_pf = np.array(User_scheduling_env.metric_pf_short_accum_thr).mean()
+
+        to_write = str(avg_rl) + "  " + str(avg_pf)
+        f.write(to_write)
+        f.close()
 
         arr_rl = np.asarray(User_scheduling_env.metric_rl)[np.newaxis]
         arr_rl = np.transpose(arr_rl)
@@ -203,8 +212,8 @@ def Create_transtion_matrix(states):
     global property_to_probability3
 
 
-    #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
-    global_transition = [property_to_probability1, property_to_probability2]
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    #global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
     row_transition_matrix = []
@@ -261,9 +270,9 @@ if __name__ == "__main__":
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
+    transition_matrix_channel = Create_transtion_matrix(states)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states_2_ues)
+                                states=states)
 
 
     env = UserScheduling()

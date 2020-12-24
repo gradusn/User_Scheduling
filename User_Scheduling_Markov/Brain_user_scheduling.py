@@ -272,7 +272,7 @@ class QLearningTable:
 
 
     def load_table(self):
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_quant2_UE1GUE20703.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_5tti_75iter_UE1G0703_UE2B0703_UE3B_fixed.pkl")
         #tmp_table_ue1 = np.load("table_ue1_with_B_for1_test3.npy")
         #tmp_table_ue2 = np.load("table_ue2_with_B_for_test3.npy")
         '''
