@@ -30,11 +30,11 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-n_UEs = 3
-#n_UEs = 2
+#n_UEs = 3
+n_UEs = 2
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
+property_to_probability2 = {'G': [0.5, 0.5], 'B': [0.5, 0.5]}
 property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
 
 
@@ -119,8 +119,8 @@ def test():
     global state_action
     global start_state
 
-    #start_state = 'G G'
-    start_state = 'G G B'
+    start_state = 'G G'
+    #start_state = 'G G B'
     timer_tti = 1
 
     channels = env.create_channel(start_state, timer_tti)
@@ -157,7 +157,8 @@ def test():
 
         print('testing ' + str(iter) + ' over')
 
-        f = open("results_3UEs_5TTi.txt", "a")
+        #f = open("results_3UEs_5TTi.txt", "a")
+        f = open("results_2UEs_5TTi_0505.txt", "a")
         avg_rl = np.array(User_scheduling_env.metric_rl_accum_thr).mean()
         avg_pf = np.array(User_scheduling_env.metric_pf_short_accum_thr).mean()
 
@@ -212,8 +213,8 @@ def Create_transtion_matrix(states):
     global property_to_probability3
 
 
-    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
-    #global_transition = [property_to_probability1, property_to_probability2]
+    #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
     row_transition_matrix = []
@@ -270,9 +271,9 @@ if __name__ == "__main__":
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(states)
+    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states)
+                                states=states_2_ues)
 
 
     env = UserScheduling()

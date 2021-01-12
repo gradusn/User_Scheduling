@@ -27,8 +27,8 @@ max_time_slots = 5
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 3
-#n_UEs = 2
+#n_UEs = 3
+n_UEs = 2
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -50,8 +50,8 @@ gain2 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-gain = [gain0, gain1, gain2]
-#gain = [gain0, gain1]
+#gain = [gain0, gain1, gain2]
+gain = [gain0, gain1]
 
 count_GG_rl = 0
 count_GG_pf = 0
@@ -61,8 +61,8 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-n_actions = 3
-#n_actions = 2
+#n_actions = 3
+n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -321,8 +321,8 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state, timer_tti+1)
 
         if timer_tti == max_time_slots:
-            #actions = list(combinations([0,1,2],5))
-            actions = list(product([0, 1, 2], repeat=5))
+            #actions = list(product([0, 1, 2], repeat=5))
+            actions = list(product([0, 1], repeat=5))
             optimal_thr = 0
             tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
             if [string_states] not in string_states_list:
@@ -331,13 +331,16 @@ class UserScheduling(object):
                 for i in actions:
                     tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
                     j = 0
-                    while j < 15:
-                        string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2]]
-                        if string_state_split_tmp[i[int(j/3)]] == 'G':
-                            tmp_thr_for_optimum[i[int(j/3)]] += TransportBlockSizeTable[26]/8
+                    #j<10 for 2 Ues, j<15 for 3 Ues
+                    while j < 10:
+                        #for 3 Ues string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2]]
+                        string_state_split_tmp = [string_states_split[j], string_states_split[j+1]]
+                        if string_state_split_tmp[i[int(j/2)]] == 'G':
+                            tmp_thr_for_optimum[i[int(j/2)]] += TransportBlockSizeTable[26]/8
                         else:
-                            tmp_thr_for_optimum[i[int(j/3)]] += TransportBlockSizeTable[1]/8
-                        j = j + 3
+                            tmp_thr_for_optimum[i[int(j/2)]] += TransportBlockSizeTable[1]/8
+                        #J = J+2 for 2 Ues, j =j +3 for 3
+                        j = j + 2
                     thr = 0
                     for t in range(0, len(tmp_thr_for_optimum)):
                         if tmp_thr_for_optimum[t] == 0:
