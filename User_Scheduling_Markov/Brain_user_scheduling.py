@@ -266,7 +266,7 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self, table1, table2):
-        self.q_table.to_pickle("0307_tables/qtable_SU_example_5tti_35iter_UE1G_UE2B0703_fixed.pkl")
+        self.q_table.to_pickle("qtable_SU_example_4tti_35iter_UE1G_UE2B0703_accumthr.pkl")
         #np.save("table_ue1_5tti_UE1G_UE2B0901.npy", table1)
         #np.save("table_ue2_5tti_UE1G_UE2B0901.npy", table2)
 

@@ -23,7 +23,7 @@ from MarkovChain import MarkovChain
 from itertools import combinations, product
 
 
-max_time_slots = 5
+max_time_slots = 4
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
@@ -86,10 +86,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 5
-time_window_short = 5
-time_window_large = 5
-time_window_test = 5
+time_window = 4
+time_window_short = 4
+time_window_large = 4
+time_window_test = 4
 diff = []
 metric_rl = []
 metric_pf = []
@@ -201,7 +201,7 @@ class UserScheduling(object):
         check = []
         global count
 
-        R, tmp_thr_optimal, tmp_thr_optimal_short = self.get_rates(observation, action, 'train', timer_tti)
+        R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'train', timer_tti)
 
         ues_thr_rl = observation[0].flatten()
 
@@ -214,12 +214,13 @@ class UserScheduling(object):
 
         next_channel_state = channel_chain.next_state(state)
 
-
+        ues_thr_rl[action] += thr_rl
+        '''
         for i in array:
             ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
 
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-
+        '''
         # reward function
         reward = 0
 
@@ -460,8 +461,8 @@ class UserScheduling(object):
         actions = np.arange(n_UEs)
         if option == 'train':
             actions = [action_rl]
-            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf, pf_thr_noavg = self.find_optimal_action(observation, actions, option, timer_tti)
-            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short
+            rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
+            return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf
         else:
             rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.find_optimal_action(observation, actions, option, timer_tti)
             return rates_per_algo, tmp_thr_optimal, tmp_thr_optimal_short, action_pf
