@@ -23,6 +23,7 @@ import time
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+from itertools import product
 
 option = 'train'
 state_action = []
@@ -30,22 +31,27 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-#n_UEs = 3
-n_UEs = 2
+#n_UEs = 4
+n_UEs = 3
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
-property_to_probability2 = {'G': [0.7, 0.3], 'B': [0.3, 0.7]}
-property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
+property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
+property_to_probability3 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability4 = {'G': [0, 1], 'B': [1, 0]}
+property_to_probability5 = {'G': [1, 0], 'B': [0, 1]}
+
+
 
 
 corr_probability = 0.8
-
-max_episodes = 25000000
+Reset_num = 1000
+max_episodes = 50000000
 max_runs_stats = 500
-max_test = 100000
+max_test = 10000
 table_UE1 = []
 table_UE2 = []
 table_UE3 = []
+
 
 
 
@@ -54,8 +60,9 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    #start_state = 'G G B'
-    start_state = 'G G'
+    #start_state = 'G G G'
+    start_state = 'G G G B G'
+    #start_state = 'G G'
     '''
     with open('iTBS_UE0_1.csv', newline='') as csvfile:
         UE1_ITBS = csv.reader(csvfile)
@@ -119,9 +126,13 @@ def test():
     global state_action
     global start_state
 
-    start_state = 'G G'
-    #start_state = 'G G B'
+    #start_state = 'G G'
+    #start_state = 'G B G B'
+    start_state = 'G G B'
     timer_tti = 1
+    timer_tti_for_reset = 1
+    reset = Reset_num/100
+
 
     channels = env.create_channel(start_state, timer_tti)
     observation = env.reset(channels)
@@ -129,6 +140,9 @@ def test():
     User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
     User_scheduling_env.ues_thr_ri_ti_global_short_accum_thr = np.full((1, n_UEs), 0, dtype=float)
+    User_scheduling_env.jitter_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
+    User_scheduling_env.jitter_slots_pf = np.full((1, n_UEs), -1, dtype=float). flatten()
+
     RL.load_table()
     for iter in range(0, 1):
         string_pf = "q_learning_SU_6tti_pf_1_noquant_UE1GUE2B0703.csv"
@@ -147,18 +161,85 @@ def test():
             # swap observation
             observation = observation_
             timer_tti += 1
+            timer_tti_for_reset += 1
 
             if done:
                 timer_tti = 1
-                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
-                User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
+                #User_scheduling_env.ues_thr_ri_ti_global_noavg = np.full((1, n_UEs), 0, dtype=float)
+                #User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
+            if timer_tti_for_reset > reset:
                 User_scheduling_env.ues_thr_ri_ti_global_rr = np.full((1, n_UEs), 0, dtype=float)
+                User_scheduling_env.ues_thr_ri_ti_global_short = np.full((1, n_UEs), 0, dtype=float)
                 User_scheduling_env.ues_thr_ri_ti_global_short_accum_thr = np.full((1, n_UEs), 0, dtype=float)
-
+                timer_tti_for_reset = 1
         print('testing ' + str(iter) + ' over')
 
         #f = open("results_3UEs_5TTi.txt", "a")
-        f = open("results_2UEs_5TTi_0505.txt", "a")
+        #f = open("results_2UEs_5TTi_0505.txt", "a")
+        '''
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_gcount_rl.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.list_g)
+        f.close()
+
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_bcount_rl.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.list_b)
+        f.close()
+
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_bcount_pf.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.list_b_pf)
+        f.close()
+
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_gcount_pf.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.list_g_pf)
+        f.close()
+        
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_rl_jitter_UE3.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.jitter_UE3)
+        f.close()
+
+        with open('RResults_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_pf_jitter_UE1.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.jitter_UE1_pf)
+        f.close()
+
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_pf_jitter_UE2.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.jitter_UE2_pf)
+        f.close()
+
+        with open('Results_qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_pf_jitter_UE3.txt', 'w') as f:
+            csv_writer = csv.writer(f)
+            csv_writer.writerow(User_scheduling_env.jitter_UE3_pf)
+        f.close()
+        '''
+
+        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_optimal.txt', 'w') as f:
+            for list in User_scheduling_env.arr_accum_thr_optimal:
+                f.write(str(list)[1:-1] +'\n')
+        f.close()
+
+        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_rr.txt', 'w') as f:
+            for list in User_scheduling_env.arr_accum_thr_rr:
+                f.write(str(list)[1:-1] +'\n')
+        f.close()
+
+        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_rl.txt', 'w') as f:
+            for list in User_scheduling_env.arr_accum_thr_rl:
+                f.write(str(list)[1:-1] +'\n')
+        f.close()
+
+        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_pf.txt', 'w') as f:
+            for list in User_scheduling_env.arr_accum_thr_pf:
+                f.write(str(list)[1:-1] +'\n')
+        f.close()
+
+
+
         avg_rl = np.array(User_scheduling_env.metric_rl_accum_thr).mean()
         avg_pf = np.array(User_scheduling_env.metric_pf_short_accum_thr).mean()
 
@@ -211,10 +292,15 @@ def Create_transtion_matrix(states):
     global property_to_probability1
     global property_to_probability2
     global property_to_probability3
+    global property_to_probability4
+    global property_to_probability5
+
+
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3,property_to_probability4, property_to_probability4]
 
 
     #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
-    global_transition = [property_to_probability1, property_to_probability2]
+    #global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
     row_transition_matrix = []
@@ -246,10 +332,22 @@ def Create_transtion_matrix(states):
 
 
 if __name__ == "__main__":
-
-
-
-
+    states_4Ues = ['G G G G',
+                   'G G G B',
+                   'G G B G',
+                   'G B G G',
+                   'B G G G',
+                   'G G B B',
+                   'G B B G',
+                   'B B G G',
+                   'B G B G',
+                   'G B G B',
+                   'B G G B',
+                   'B B B G',
+                   'G B B B',
+                   'B B G B',
+                   'B G B B',
+                   'B B B B']
     states = ['G G G',
               'G G B',
               'G B G',
@@ -265,15 +363,18 @@ if __name__ == "__main__":
               'B B',
               ]
 
-
+    a = list(product(['G' ,'B'], repeat=5))
+    test = []
+    for i in a:
+        test.append(' '.join(i))
 
     #corr = ['GB', 'BG', 'BB']
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(states_2_ues)
+    transition_matrix_channel = Create_transtion_matrix(test)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=states_2_ues)
+                                states=test)
 
 
     env = UserScheduling()

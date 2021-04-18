@@ -23,12 +23,12 @@ from MarkovChain import MarkovChain
 from itertools import combinations, product
 
 
-max_time_slots = 4
+max_time_slots = 6
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
 #n_UEs = 3
-n_UEs = 2
+n_UEs = 5
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -40,6 +40,7 @@ channel_vectors = np.array(
 gain0 = {'G': [26, 26], 'B': [1, 1]}
 gain1 = {'G': [26, 26], 'B': [1, 1]}
 gain2 = {'G': [26, 26], 'B': [1, 1]}
+gain3 = {'G': [26, 26], 'B': [1, 1]}
 
 
 #gain0 = {'G': [24, 24], 'B': [5, 5]}
@@ -50,8 +51,9 @@ gain2 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-#gain = [gain0, gain1, gain2]
-gain = [gain0, gain1]
+#gain = [gain0, gain1, gain2, gain3]
+gain = [gain0, gain1, gain2, gain2, gain2]
+#gain = [gain0, gain1]
 
 count_GG_rl = 0
 count_GG_pf = 0
@@ -61,8 +63,8 @@ count_GG_pf = 0
 channelmatrix = [[]]
 
 #n_actions = binomial(3, 2)
-#n_actions = 3
-n_actions = 2
+n_actions = n_UEs
+#n_actions = 2
 
 logthr_rl = []
 logthr_random = []
@@ -86,10 +88,10 @@ best_action = 0
 
 old_optimal_action = []
 old_action = []
-time_window = 4
-time_window_short = 4
-time_window_large = 4
-time_window_test = 4
+time_window = max_time_slots
+time_window_short = max_time_slots
+time_window_large = max_time_slots
+time_window_test = max_time_slots
 diff = []
 metric_rl = []
 metric_pf = []
@@ -131,6 +133,26 @@ count  = 0
 string_states_list = []
 rl_actions = ""
 pf_actions = ""
+arr_accum_thr_rl = []
+arr_accum_thr_pf = []
+arr_accum_thr_rr = []
+arr_accum_thr_optimal = []
+jitter_slots= []
+jitter_UE1 = []
+jitter_UE2 = []
+jitter_UE3 = []
+jitter_slots_pf= []
+jitter_UE1_pf = []
+jitter_UE2_pf = []
+jitter_UE3_pf = []
+count_g = 0
+count_b = 0
+count_g_pf = 0
+count_b_pf = 0
+list_g = []
+list_b = []
+list_g_pf = []
+list_b_pf = []
 
 
 q_table = pd.DataFrame(columns=list(range(2)), dtype=np.float64)
@@ -157,6 +179,10 @@ class UserScheduling(object):
     def reset(self, channel_state):
         global Throughputs
         global array_thr_rl
+        global jitter_slots
+        global jitter_UE1
+        global jitter_UE2
+
         array_thr_rl = np.full((1, n_UEs), 0, dtype=float).flatten()
         Throughputs = np.full((1, n_UEs), 0, dtype=float).flatten()
         array_slots = np.full((1, n_UEs), 0, dtype=float)
@@ -201,6 +227,7 @@ class UserScheduling(object):
         check = []
         global count
 
+
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'train', timer_tti)
 
         ues_thr_rl = observation[0].flatten()
@@ -215,12 +242,10 @@ class UserScheduling(object):
         next_channel_state = channel_chain.next_state(state)
 
         ues_thr_rl[action] += thr_rl
-        '''
-        for i in array:
-            ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
 
-        ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-        '''
+
+
+
         # reward function
         reward = 0
 
@@ -271,7 +296,23 @@ class UserScheduling(object):
         global string_states_list
         global rl_actions
         global pf_actions
+        global arr_accum_thr_rl
+        global arr_accum_thr_pf
+        global arr_accum_thr_rr
 
+        global arr_accum_thr_optimal
+        global jitter_slots
+        global jitter_UE1
+        global jitter_UE2
+        global jitter_UE3
+        global jitter_slots_pf
+        global jitter_UE1_pf
+        global jitter_UE2_pf
+        global jitter_UE3_pf
+        global count_g
+        global count_b
+        global count_g_pf
+        global count_b_pf
 
         R, tmp_thr_optimal, tmp_thr_optimal_short, action_pf = self.get_rates(observation, action, 'test', timer_tti)
         #tmp_string = tmp_string + str(observation[1]) + " "
@@ -281,7 +322,15 @@ class UserScheduling(object):
         print(str(observation) + str(action) + str(action_pf) )
         string_states = string_states + state + " "
         ues_thr_rl = observation[0].flatten()
-
+        channels = observation[1].split()
+        if channels[action] == 'G':
+            count_g += 1
+        else:
+            count_b += 1
+        if channels[action_pf] == 'G':
+            count_g_pf += 1
+        else:
+            count_b_pf += 1
         ues_ri_ti_thr_rr = copy.deepcopy(ues_thr_ri_ti_global_rr).flatten()
 
         thr_rl = R[action]/8
@@ -293,20 +342,48 @@ class UserScheduling(object):
         array_rr = list(np.arange(n_UEs))
         array_rr.remove(UE_for_RR)
 
-        #ues_thr_rl[action] += thr_rl
+        ues_thr_rl[action] += thr_rl
 
+        if jitter_slots[action] != -1:
+            if action == 0:
+                jitter_UE1.append(jitter_slots[action])
+            elif action == 1:
+                jitter_UE2.append(jitter_slots[action])
+            else:
+                jitter_UE3.append(jitter_slots[action])
+        for i in array:
+            if jitter_slots[i] == -1:
+                jitter_slots[i] = 0
+            jitter_slots[i] += 1
+
+        jitter_slots[action] = 0
+
+        if jitter_slots_pf[action_pf] != -1:
+            if action_pf == 0:
+                jitter_UE1_pf.append(jitter_slots_pf[action_pf])
+            elif action_pf == 1:
+                jitter_UE2_pf.append(jitter_slots_pf[action_pf])
+            else:
+                jitter_UE3_pf.append(jitter_slots_pf[action_pf])
+        array = list(np.arange(n_UEs))
+        array.remove(action_pf)
+        for i in array:
+            if jitter_slots_pf[i] == -1:
+                jitter_slots_pf[i] = 0
+            jitter_slots_pf[i] += 1
+
+        jitter_slots_pf[action_pf] = 0
+        '''
         for i in array:
             ues_thr_rl[i] = (1 - (1 / time_window)) * ues_thr_rl[i]
 
         ues_thr_rl[action] = (1 - (1 / time_window)) * ues_thr_rl[action] + (1 / time_window) * thr_rl
-
+        '''
         Throughputs[action] += thr_rl
 
-        for i in array_rr:
-            ues_ri_ti_thr_rr[i] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[i]
 
-        ues_ri_ti_thr_rr[UE_for_RR] = (1 - (1 / time_window_short)) * ues_ri_ti_thr_rr[UE_for_RR] + (
-                        1 / time_window_short) * thr_rr
+
+        ues_ri_ti_thr_rr[UE_for_RR] += thr_rr
 
 
         ues_thr_ri_ti_global_short = tmp_thr_optimal_short
@@ -322,111 +399,69 @@ class UserScheduling(object):
         channels = self.create_channel(next_channel_state, timer_tti+1)
 
         if timer_tti == max_time_slots:
-            #actions = list(product([0, 1, 2], repeat=5))
-            actions = list(product([0, 1], repeat=5))
+
+            #actions = list(product([0, 1, 2, 3], repeat=5))
+            actions = list(product([0, 1, 2], repeat=10))
+            #actions = list(product([0, 1], repeat=10))
             optimal_thr = 0
             tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
-            if [string_states] not in string_states_list:
-                string_states_list.append([string_states])
-                string_states_split = string_states.split()
-                for i in actions:
-                    tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
-                    j = 0
+            #if [string_states] not in string_states_list:
+            string_states_list.append([string_states])
+            string_states_split = string_states.split()
+            for i in actions:
+                tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
+                j = 0
                     #j<10 for 2 Ues, j<15 for 3 Ues
-                    while j < 10:
-                        #for 3 Ues string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2]]
-                        string_state_split_tmp = [string_states_split[j], string_states_split[j+1]]
-                        if string_state_split_tmp[i[int(j/2)]] == 'G':
-                            tmp_thr_for_optimum[i[int(j/2)]] += TransportBlockSizeTable[26]/8
-                        else:
-                            tmp_thr_for_optimum[i[int(j/2)]] += TransportBlockSizeTable[1]/8
+                while j < n_UEs*max_time_slots:
+                    #string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2], string_states_split[j+3]]
+                    string_state_split_tmp = [string_states_split[j], string_states_split[j+1], string_states_split[j+2]]
+                    #string_state_split_tmp = [string_states_split[j], string_states_split[j + 1]]
+                    if string_state_split_tmp[i[int(j/n_UEs)]] == 'G':
+                        tmp_thr_for_optimum[i[int(j/n_UEs)]] += int(TransportBlockSizeTable[26]/8)
+                    else:
+                        tmp_thr_for_optimum[i[int(j/n_UEs)]] += int(TransportBlockSizeTable[1]/8)
                         #J = J+2 for 2 Ues, j =j +3 for 3
-                        j = j + 2
-                    thr = 0
-                    for t in range(0, len(tmp_thr_for_optimum)):
-                        if tmp_thr_for_optimum[t] == 0:
-                            thr = thr + 0
-                        else:
-                            thr = thr + np.log2(tmp_thr_for_optimum[t])
+                    j = j + n_UEs
+                thr = 0
+                for t in range(0, len(tmp_thr_for_optimum)):
 
-                    if optimal_thr < thr:
-                        optimal_actions = i
-                        optimal_thr = thr
-                reward = 0
-                for t in range(0, len(Throughputs)):
-                    if Throughputs[t] == 0:
-                        reward = reward + 0
+                    if tmp_thr_for_optimum[t] == 0:
+                        thr = thr + 0
+                            #thr = -math.inf
+                            #break
                     else:
-                        reward = reward + float(np.log2(Throughputs[t]))
-                reward_optimal_short = 0
-                for k in range(0, len(ues_thr_ri_ti_global_short_accum_thr)):
-                    if ues_thr_ri_ti_global_short_accum_thr[k] == 0:
-                        reward_optimal_short = reward_optimal_short + 0
-                    else:
-                        reward_optimal_short = reward_optimal_short + float(np.log2(ues_thr_ri_ti_global_short_accum_thr[k]))
-                #to_write = string_states + "  " + str(optimal_actions) + "  " + str(optimal_thr) + "  " + (rl_actions) + "  " + str(reward) + "  " + str(pf_actions) + "  " + str(reward_optimal_short) + "\n"
-                #f = open("results_3UEs_5TTi.txt", "a")
-                #f.write(to_write)
-                #f.close()
+                        thr = thr + np.log2(tmp_thr_for_optimum[t])
+
+                if optimal_thr < thr:
+                    optimal_actions = i
+                    optimal_thr = thr
+                    Throughputs = tmp_thr_for_optimum
+            arr_accum_thr_optimal.append(Throughputs.tolist())
+
 
 
             rl_actions = ""
             pf_actions = ""
-            if string_states == "G B G B G B G B G G ":
-                stop = 1
+
             channels = self.create_channel(next_channel_state, 1)
 
-            reward = 0
-            for i in range(0, len(ues_thr_rl)):
-                if ues_thr_rl[i] == 0:
-                    reward = reward + 0
-                else:
-                    reward = reward + float(np.log2(ues_thr_rl[i]))
+            arr_accum_thr_rl.append(ues_thr_rl.tolist())
+            arr_accum_thr_rr.append(ues_ri_ti_thr_rr.tolist())
 
-            metric_rl.append(reward)
+            arr_accum_thr_pf.append(ues_thr_ri_ti_global_short_accum_thr.tolist())
 
-            reward_optimal_short = 0
-            for i in range(0, len(tmp_thr_optimal_short)):
-                if tmp_thr_optimal_short[i] == 0:
-                    reward_optimal_short = reward_optimal_short + 0
-                else:
-                    reward_optimal_short = reward_optimal_short + float(np.log2(tmp_thr_optimal_short[i]))
-
-            metric_pf_short.append(reward_optimal_short)
-
-            reward = 0
-            for t in range(0, len(Throughputs)):
-                if Throughputs[t] == 0:
-                    reward = reward + 0
-                else:
-                    reward = reward + float(np.log2(Throughputs[t]))
-            metric_rl_accum_thr.append(reward)
-
-            reward_optimal_short = 0
-            for k in range(0, len(ues_thr_ri_ti_global_short_accum_thr)):
-                if ues_thr_ri_ti_global_short_accum_thr[k] == 0:
-                    reward_optimal_short = reward_optimal_short + 0
-                else:
-                    reward_optimal_short = reward_optimal_short + float(
-                        np.log2(ues_thr_ri_ti_global_short_accum_thr[k]))
-            metric_pf_short_accum_thr.append(reward_optimal_short)
-
-
-
-            if ((float(reward) - float(reward_optimal_short))/float(reward_optimal_short)*100 >= 5):
-                self.check_state(string_states, reward, reward_optimal_short)
-
-            reward_rr = 0
-            for i in range(0, len(ues_ri_ti_thr_rr)):
-                if (ues_ri_ti_thr_rr[i] == 0):
-                    reward_rr = reward_rr + 0
-                else:
-                    reward_rr = reward_rr + float(np.log2(ues_ri_ti_thr_rr[i]))
-
-            metric_rr.append(reward_rr)
             string_states = ""
             s_ = self.reset(channels)
+            list_b.append(count_b)
+            list_g.append(count_g)
+            list_b_pf.append(count_b_pf)
+            list_g_pf.append(count_g_pf)
+            count_b = 0
+            count_g = 0
+            count_b_pf = 0
+            count_g_pf = 0
             done = True
+
 
         else:
             done = False
