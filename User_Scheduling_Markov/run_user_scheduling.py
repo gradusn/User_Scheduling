@@ -34,9 +34,9 @@ beta_GB = 0.9
 #n_UEs = 4
 n_UEs = 3
 
-property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability1 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
-property_to_probability3 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability3 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
 property_to_probability4 = {'G': [0, 1], 'B': [1, 0]}
 property_to_probability5 = {'G': [1, 0], 'B': [0, 1]}
 
@@ -60,8 +60,8 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    #start_state = 'G G G'
-    start_state = 'G G G B G'
+    start_state = 'G G G'
+    #start_state = 'G G G B G'
     #start_state = 'G G'
     '''
     with open('iTBS_UE0_1.csv', newline='') as csvfile:
@@ -296,10 +296,10 @@ def Create_transtion_matrix(states):
     global property_to_probability5
 
 
-    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3,property_to_probability4, property_to_probability4]
+    #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3,property_to_probability4, property_to_probability4]
 
 
-    #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
     #global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
@@ -363,7 +363,7 @@ if __name__ == "__main__":
               'B B',
               ]
 
-    a = list(product(['G' ,'B'], repeat=5))
+    a = list(product(['G' ,'B'], repeat=3))
     test = []
     for i in a:
         test.append(' '.join(i))

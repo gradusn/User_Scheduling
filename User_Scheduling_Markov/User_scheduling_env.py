@@ -23,12 +23,12 @@ from MarkovChain import MarkovChain
 from itertools import combinations, product
 
 
-max_time_slots = 6
+max_time_slots = 3
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
 #n_UEs = 3
-n_UEs = 5
+n_UEs = 3
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
