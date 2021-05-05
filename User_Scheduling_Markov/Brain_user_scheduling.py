@@ -266,7 +266,7 @@ class QLearningTable:
         print(self.epsilon)
 
     def save_table(self, table1, table2):
-        self.q_table.to_pickle("qtable_SU_example_5tti_UE1G_UE2B0703_UE3B0703_UE4B_accumthr.pkl")
+        self.q_table.to_pickle("qtable_SU_example_10tti_UE1G_UE2B0703_UE3B_UE4G_accumthr.pkl")
         #np.save("table_ue1_5tti_UE1G_UE2B0901.npy", table1)
         #np.save("table_ue2_5tti_UE1G_UE2B0901.npy", table2)
 
@@ -279,7 +279,7 @@ class QLearningTable:
         #self.q_table = pd.read_pickle("qtable_SU_example_5tti_20iter_UE1G_UE2B0505_fixed.pkl")
         #self.q_table = pd.read_pickle("qtable_SU_example_10tti_100iter_UE1G_UE2B0703_UE3B_accumthr.pkl")
         #self.q_table = pd.read_pickle("qtable_SU_example_10tti_50iter_UE1G_UE2B0703_regular_FIXED.pkl")
-        self.q_table = pd.read_pickle("qtable_SU_example_10tti_100iter_UE1G_UE2B0703_UE3B_accumthr.pkl")
+        self.q_table = pd.read_pickle("qtable_SU_example_10tti_50iter_UE1G_UE2B0703_regular_FIXED.pkl")
         #tmp_table_ue1 = np.load("table_ue1_with_B_for1_test3.npy")
         #tmp_table_ue2 = np.load("table_ue2_with_B_for_test3.npy")
         '''

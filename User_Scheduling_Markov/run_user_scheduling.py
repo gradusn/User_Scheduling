@@ -31,13 +31,13 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-#n_UEs = 4
-n_UEs = 3
+n_UEs = 4
+#n_UEs = 2
 
-property_to_probability1 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
+property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
-property_to_probability3 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
-property_to_probability4 = {'G': [0, 1], 'B': [1, 0]}
+property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
+property_to_probability4 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability5 = {'G': [1, 0], 'B': [0, 1]}
 
 
@@ -60,7 +60,7 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    start_state = 'G G G'
+    start_state = 'G G B G'
     #start_state = 'G G G B G'
     #start_state = 'G G'
     '''
@@ -126,9 +126,9 @@ def test():
     global state_action
     global start_state
 
-    #start_state = 'G G'
+    start_state = 'G G'
     #start_state = 'G B G B'
-    start_state = 'G G B'
+    #start_state = 'G G B'
     timer_tti = 1
     timer_tti_for_reset = 1
     reset = Reset_num/100
@@ -218,22 +218,22 @@ def test():
         f.close()
         '''
 
-        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_optimal.txt', 'w') as f:
+        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_optimal.txt', 'w') as f:
             for list in User_scheduling_env.arr_accum_thr_optimal:
                 f.write(str(list)[1:-1] +'\n')
         f.close()
 
-        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_rr.txt', 'w') as f:
+        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_rr.txt', 'w') as f:
             for list in User_scheduling_env.arr_accum_thr_rr:
                 f.write(str(list)[1:-1] +'\n')
         f.close()
 
-        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_rl.txt', 'w') as f:
+        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_rl.txt', 'w') as f:
             for list in User_scheduling_env.arr_accum_thr_rl:
                 f.write(str(list)[1:-1] +'\n')
         f.close()
 
-        with open('Results_qtable_10tti_UE1G_UE2B0703_UE3B' + str(int(reset)) + 'reset_pf.txt', 'w') as f:
+        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_pf.txt', 'w') as f:
             for list in User_scheduling_env.arr_accum_thr_pf:
                 f.write(str(list)[1:-1] +'\n')
         f.close()
@@ -299,7 +299,7 @@ def Create_transtion_matrix(states):
     #global_transition = [property_to_probability1, property_to_probability2, property_to_probability3,property_to_probability4, property_to_probability4]
 
 
-    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3]
+    global_transition = [property_to_probability1, property_to_probability2, property_to_probability3, property_to_probability4]
     #global_transition = [property_to_probability1, property_to_probability2]
 
     transition_matrix = []
@@ -363,18 +363,18 @@ if __name__ == "__main__":
               'B B',
               ]
 
-    a = list(product(['G' ,'B'], repeat=3))
-    test = []
+    a = list(product(['G' ,'B'], repeat=4))
+    test_states = []
     for i in a:
-        test.append(' '.join(i))
+        test_states.append(' '.join(i))
 
     #corr = ['GB', 'BG', 'BB']
 
     #transition_matrix_corr = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     #corr_chain = MarkovChain(transition_matrix=transition_matrix_corr, states=corr)
-    transition_matrix_channel = Create_transtion_matrix(test)
+    transition_matrix_channel = Create_transtion_matrix(test_states)
     channel_chain = MarkovChain(transition_matrix=transition_matrix_channel,
-                                states=test)
+                                states=test_states)
 
 
     env = UserScheduling()

@@ -23,12 +23,12 @@ from MarkovChain import MarkovChain
 from itertools import combinations, product
 
 
-max_time_slots = 3
+max_time_slots = 10
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-#n_UEs = 3
-n_UEs = 3
+n_UEs = 4
+#n_UEs = 2
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -51,8 +51,8 @@ gain3 = {'G': [26, 26], 'B': [1, 1]}
 #gain0 = {'G0': [7],'G1': [12], 'G2': [15], 'B': [5]}
 #gain1 = {'G0': [14], 'G1': [16], 'G2': [17], 'G3': [19], 'G4': [27], 'B': [10]}
 
-#gain = [gain0, gain1, gain2, gain3]
-gain = [gain0, gain1, gain2, gain2, gain2]
+gain = [gain0, gain1, gain2, gain3]
+#gain = [gain0, gain1, gain2, gain2, gain2]
 #gain = [gain0, gain1]
 
 count_GG_rl = 0
@@ -400,8 +400,8 @@ class UserScheduling(object):
 
         if timer_tti == max_time_slots:
 
-            #actions = list(product([0, 1, 2, 3], repeat=5))
-            actions = list(product([0, 1, 2], repeat=10))
+            actions = list(product([0, 1], repeat=10))
+            #actions = list(product([0, 1, 2], repeat=10))
             #actions = list(product([0, 1], repeat=10))
             optimal_thr = 0
             tmp_thr_for_optimum = np.full((1, n_UEs), 0, dtype=float).flatten()
@@ -414,8 +414,8 @@ class UserScheduling(object):
                     #j<10 for 2 Ues, j<15 for 3 Ues
                 while j < n_UEs*max_time_slots:
                     #string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2], string_states_split[j+3]]
-                    string_state_split_tmp = [string_states_split[j], string_states_split[j+1], string_states_split[j+2]]
-                    #string_state_split_tmp = [string_states_split[j], string_states_split[j + 1]]
+                    #string_state_split_tmp = [string_states_split[j], string_states_split[j+1], string_states_split[j+2]]
+                    string_state_split_tmp = [string_states_split[j], string_states_split[j + 1]]
                     if string_state_split_tmp[i[int(j/n_UEs)]] == 'G':
                         tmp_thr_for_optimum[i[int(j/n_UEs)]] += int(TransportBlockSizeTable[26]/8)
                     else:
