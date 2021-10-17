@@ -31,13 +31,13 @@ state_action = []
 alpha_GB = 0.9
 beta_GB = 0.9
 
-n_UEs = 4
-#n_UEs = 2
+#_UEs = 4
+n_UEs = 3
 
 property_to_probability1 = {'G': [1, 0], 'B': [0, 1]}
 property_to_probability2 = {'G': [0.3, 0.7], 'B': [0.7, 0.3]}
 property_to_probability3 = {'G': [0, 1], 'B': [1, 0]}
-property_to_probability4 = {'G': [1, 0], 'B': [0, 1]}
+property_to_probability4 = {'G': [0, 1], 'B': [1, 0]}
 property_to_probability5 = {'G': [1, 0], 'B': [0, 1]}
 
 
@@ -45,9 +45,9 @@ property_to_probability5 = {'G': [1, 0], 'B': [0, 1]}
 
 corr_probability = 0.8
 Reset_num = 1000
-max_episodes = 50000000
+max_episodes = 20000000
 max_runs_stats = 500
-max_test = 10000
+max_test = 50000
 table_UE1 = []
 table_UE2 = []
 table_UE3 = []
@@ -60,9 +60,9 @@ def update():
     global state_action
     global start_state
     timer_tti = 1
-    start_state = 'G G B G'
+    #start_state = 'G G B G'
     #start_state = 'G G G B G'
-    #start_state = 'G G'
+    start_state = 'G B'
     '''
     with open('iTBS_UE0_1.csv', newline='') as csvfile:
         UE1_ITBS = csv.reader(csvfile)
@@ -126,9 +126,9 @@ def test():
     global state_action
     global start_state
 
-    start_state = 'G G'
-    #start_state = 'G B G B'
-    #start_state = 'G G B'
+    #start_state = 'G B'
+    #start_state = 'G B B B'
+    start_state = 'G B B'
     timer_tti = 1
     timer_tti_for_reset = 1
     reset = Reset_num/100
@@ -216,24 +216,24 @@ def test():
             csv_writer = csv.writer(f)
             csv_writer.writerow(User_scheduling_env.jitter_UE3_pf)
         f.close()
-        '''
+        
+        
+        with open('Results_qtable_5tti_UE1GNACK0_UE2BNACK02_UE3BNACK02' + str(int(reset)) + 'reset_rl.txt', 'w') as f:
+            for list in User_scheduling_env.arr_accum_NACK_thr_rl:
+                f.write(str(list)[1:-1] +'\n')
+        f.close()
 
-        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_optimal.txt', 'w') as f:
+        with open('Results_qtable_5tti_UE1GNACK0_UE2BNACK02_UE3BNACK02' + str(int(reset)) + 'reset_pf.txt', 'w') as f:
+            for list in User_scheduling_env.arr_accum_NACK_thr_pf:
+                f.write(str(list)[1:-1] +'\n')
+        f.close()
+        '''
+        with open('Results_qtable_5tti_UE1G_UE2B0703_same3_UE4B' + str(int(reset)) + 'reset_optimal.txt', 'w') as f:
             for list in User_scheduling_env.arr_accum_thr_optimal:
                 f.write(str(list)[1:-1] +'\n')
         f.close()
 
-        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_rr.txt', 'w') as f:
-            for list in User_scheduling_env.arr_accum_thr_rr:
-                f.write(str(list)[1:-1] +'\n')
-        f.close()
-
-        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_rl.txt', 'w') as f:
-            for list in User_scheduling_env.arr_accum_thr_rl:
-                f.write(str(list)[1:-1] +'\n')
-        f.close()
-
-        with open('Results_qtable_10tti_UE1G_UE2B0703' + str(int(reset)) + 'reset_pf.txt', 'w') as f:
+        with open('Results_qtable_5tti_UE1G_UE2B0703_same3_UE4B' + str(int(reset)) + 'reset_pf.txt', 'w') as f:
             for list in User_scheduling_env.arr_accum_thr_pf:
                 f.write(str(list)[1:-1] +'\n')
         f.close()
@@ -363,7 +363,7 @@ if __name__ == "__main__":
               'B B',
               ]
 
-    a = list(product(['G' ,'B'], repeat=4))
+    a = list(product(['G' ,'B'], repeat=n_UEs))
     test_states = []
     for i in a:
         test_states.append(' '.join(i))
@@ -380,8 +380,8 @@ if __name__ == "__main__":
     env = UserScheduling()
     RL = QLearningTable(actions=list(range(env.n_actions)))
 
-    update()
-    #test()
+    #update()
+    test()
     #test_markov()
     #env.after(100, update)
     #env.mainloop()

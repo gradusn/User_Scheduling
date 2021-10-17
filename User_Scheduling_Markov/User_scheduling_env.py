@@ -23,12 +23,13 @@ from MarkovChain import MarkovChain
 from itertools import combinations, product
 
 
-max_time_slots = 10
+max_time_slots = 5
+P_NACK = [0, 0, 0, 0]
 UNIT = 40  # pixels
 MAZE_H = 4  # grid height
 MAZE_W = 4  # grid width
-n_UEs = 4
-#n_UEs = 2
+#n_UEs = 4
+n_UEs = 3
 comb = combinations(np.arange(n_UEs), 2)
 #action_to_ues_tbl = pd.Series(comb, index=np.arange(n_UEs))
 
@@ -126,16 +127,21 @@ TransportBlockSizeTable_simple = [1384, 1800, 2216, 2856, 5000, 4392, 7000, 6200
 take_avg = 100000
 counter_avg = 0
 
+Throughputs_Success = []
+Throughputs_Success_pf = []
+
 Throughputs = []
 array_thr_rl = []
 array_thr_pf = []
-count  = 0
+count = 0
 string_states_list = []
 rl_actions = ""
 pf_actions = ""
 arr_accum_thr_rl = []
 arr_accum_thr_pf = []
 arr_accum_thr_rr = []
+arr_accum_NACK_thr_rl = []
+arr_accum_NACK_thr_pf = []
 arr_accum_thr_optimal = []
 jitter_slots= []
 jitter_UE1 = []
@@ -182,9 +188,13 @@ class UserScheduling(object):
         global jitter_slots
         global jitter_UE1
         global jitter_UE2
+        global Throughputs_Success
+        global Throughputs_Success_pf
 
         array_thr_rl = np.full((1, n_UEs), 0, dtype=float).flatten()
         Throughputs = np.full((1, n_UEs), 0, dtype=float).flatten()
+        Throughputs_Success = np.full((1, n_UEs), 0, dtype=float).flatten()
+        Throughputs_Success_pf = np.full((1, n_UEs), 0, dtype=float).flatten()
         array_slots = np.full((1, n_UEs), 0, dtype=float)
         gb_slots = np.full((1, n_UEs), -1, dtype=float). flatten()
         gb_channels = channel_state.split()
@@ -243,6 +253,9 @@ class UserScheduling(object):
 
         ues_thr_rl[action] += thr_rl
 
+        tmp = 1
+        if np.random.uniform() > P_NACK[action]:
+            Throughputs_Success[action] += thr_rl
 
 
 
@@ -252,10 +265,10 @@ class UserScheduling(object):
         if timer_tti == max_time_slots:
             reward = 0
             for i in range(0, len(ues_thr_rl)):
-                if (ues_thr_rl[i] == 0):
+                if (Throughputs_Success[i] == 0):
                     reward = reward + 0
                 else:
-                    reward = reward + float(np.log2(ues_thr_rl[i]))
+                    reward = reward + float(np.log2(Throughputs_Success[i]))
 
             channels = self.create_channel(next_channel_state, 1)
             s_ = self.reset(channels)
@@ -343,6 +356,11 @@ class UserScheduling(object):
         array_rr.remove(UE_for_RR)
 
         ues_thr_rl[action] += thr_rl
+        Rand = np.random.uniform()
+        if Rand > P_NACK[action]:
+            Throughputs_Success[action] += thr_rl
+        if Rand > P_NACK[action_pf]:
+            Throughputs_Success_pf[action_pf] += R[action_pf]/8
 
         if jitter_slots[action] != -1:
             if action == 0:
@@ -400,7 +418,7 @@ class UserScheduling(object):
 
         if timer_tti == max_time_slots:
 
-            actions = list(product([0, 1], repeat=10))
+            actions = list(product([0, 1,2], repeat=5))
             #actions = list(product([0, 1, 2], repeat=10))
             #actions = list(product([0, 1], repeat=10))
             optimal_thr = 0
@@ -414,8 +432,8 @@ class UserScheduling(object):
                     #j<10 for 2 Ues, j<15 for 3 Ues
                 while j < n_UEs*max_time_slots:
                     #string_state_split_tmp = [string_states_split[j],string_states_split[j+1], string_states_split[j+2], string_states_split[j+3]]
-                    #string_state_split_tmp = [string_states_split[j], string_states_split[j+1], string_states_split[j+2]]
-                    string_state_split_tmp = [string_states_split[j], string_states_split[j + 1]]
+                    string_state_split_tmp = [string_states_split[j], string_states_split[j+1], string_states_split[j+2]]
+                    #string_state_split_tmp = [string_states_split[j], string_states_split[j + 1]]
                     if string_state_split_tmp[i[int(j/n_UEs)]] == 'G':
                         tmp_thr_for_optimum[i[int(j/n_UEs)]] += int(TransportBlockSizeTable[26]/8)
                     else:
@@ -438,12 +456,23 @@ class UserScheduling(object):
                     Throughputs = tmp_thr_for_optimum
             arr_accum_thr_optimal.append(Throughputs.tolist())
 
-
+            test = 0
+            test1 = 0
+            test2 = 0
+            for i in range (0, len(Throughputs)):
+                test = test + np.log2(Throughputs[i])
+                test1 = test1 + np.log2(ues_thr_rl[i])
+                test2 = test2 + np.log2(ues_thr_ri_ti_global_short_accum_thr[i])
+            if test != test2:
+                tmp_1 = 1
 
             rl_actions = ""
             pf_actions = ""
 
             channels = self.create_channel(next_channel_state, 1)
+
+            arr_accum_NACK_thr_rl.append(Throughputs_Success.tolist())
+            arr_accum_NACK_thr_pf.append(Throughputs_Success_pf.tolist())
 
             arr_accum_thr_rl.append(ues_thr_rl.tolist())
             arr_accum_thr_rr.append(ues_ri_ti_thr_rr.tolist())
